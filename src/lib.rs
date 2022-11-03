@@ -9,7 +9,7 @@ use nom::{
     bytes::complete::tag,
     character,
     combinator::{all_consuming, map, opt},
-    sequence::{pair, preceded, separated_pair},
+    sequence::{pair, preceded, tuple},
 };
 use thiserror::Error;
 
@@ -54,18 +54,9 @@ pub fn run_for_repeats(
 
 #[derive(Debug)]
 pub enum Runnable {
-    Latest {
-        repeats: Option<u32>,
-    }, // ! !10
-    Range {
-        first: u32,
-        last: u32,
-        repeats: Option<u32>,
-    }, // 12-15 12-15:100
-    Repeat {
-        day: u32,
-        repeats: Option<u32>,
-    }, // 12 12:100
+    Latest { repeats: u32 },                       // ! !10
+    Range { first: u32, last: u32, repeats: u32 }, // 12-15 12-15:100
+    Repeat { day: u32, repeats: u32 },             // 12 12:100
 }
 
 impl Runnable {
@@ -73,6 +64,9 @@ impl Runnable {
         let mut runnables: Vec<Runnable> = Vec::new();
         for arg in std::env::args().skip(1) {
             runnables.push(arg.try_into().context("failed to parse runnable command")?);
+        }
+        if runnables.is_empty() {
+            runnables.push(Runnable::Latest { repeats: 1 })
         }
         Ok(runnables)
     }
@@ -92,15 +86,10 @@ impl<'a> TryFrom<&'a str> for Runnable {
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
         let res = parse_runnable(value).map(|r| r.1)?;
 
-        match res {
-            Runnable::Range {
-                first,
-                last,
-                repeats: _,
-            } if first > last => {
+        if let Runnable::Range { first, last, .. } = res {
+            if first < last {
                 return Err(ConversionError::OutOfOrder);
             }
-            _ => {}
         }
 
         Ok(res)
@@ -119,8 +108,8 @@ pub enum ConversionError {
     ParseFailure(String),
 }
 
-impl From<nom::Err<nom::error::Error<&str>>> for ConversionError {
-    fn from(err: nom::Err<nom::error::Error<&str>>) -> Self {
+impl<T> From<nom::Err<nom::error::Error<T>>> for ConversionError {
+    fn from(err: nom::Err<nom::error::Error<T>>) -> Self {
         match err {
             nom::Err::Incomplete(_) => ConversionError::Incomplete,
             nom::Err::Error(error) => ConversionError::ParseError(format!("{:?}", error.code)),
@@ -133,15 +122,17 @@ impl From<nom::Err<nom::error::Error<&str>>> for ConversionError {
 
 fn parse_runnable(input: &str) -> nom::IResult<&str, Runnable> {
     alt((
-        map(parse_latest, |repeats| Runnable::Latest { repeats }),
+        map(parse_latest, |repeats| Runnable::Latest {
+            repeats: repeats.unwrap_or(1),
+        }),
         map(parse_range, |(first, last, repeats)| Runnable::Range {
             first,
             last,
-            repeats,
+            repeats: repeats.unwrap_or(1),
         }),
         map(parse_repeat, |(day, repeats)| Runnable::Repeat {
             day,
-            repeats,
+            repeats: repeats.unwrap_or(1),
         }),
     ))(input)
 }
@@ -151,22 +142,16 @@ fn parse_latest(input: &str) -> nom::IResult<&str, Option<u32>> {
 }
 
 fn parse_range(input: &str) -> nom::IResult<&str, (u32, u32, Option<u32>)> {
-    all_consuming(map(
-        pair(
-            separated_pair(character::complete::u32, tag("-"), character::complete::u32),
-            map(opt(pair(tag(":"), character::complete::u32)), |pair| {
-                pair.map(|p| p.1)
-            }),
-        ),
-        |((a, b), c)| (a, b, c),
-    ))(input)
+    all_consuming(tuple((
+        character::complete::u32,
+        preceded(tag("-"), character::complete::u32),
+        opt(preceded(tag(":"), character::complete::u32)),
+    )))(input)
 }
 
 fn parse_repeat(input: &str) -> nom::IResult<&str, (u32, Option<u32>)> {
     all_consuming(pair(
         character::complete::u32,
-        map(opt(pair(tag(":"), character::complete::u32)), |pair| {
-            pair.map(|p| p.1)
-        }),
+        opt(preceded(tag(":"), character::complete::u32)),
     ))(input)
 }

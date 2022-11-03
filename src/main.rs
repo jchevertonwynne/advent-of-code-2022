@@ -11,17 +11,13 @@ fn main() -> anyhow::Result<()> {
 
     for runnable in runnables {
         match runnable {
-            Runnable::Latest { repeats } => {
-                run_for_repeats(days.len() as u32, &days, repeats.unwrap_or(1))?
-            }
+            Runnable::Latest { repeats } => run_for_repeats(days.len() as u32, &days, repeats)?,
             Runnable::Range {
                 first,
                 last,
                 repeats,
-            } => (first..=last)
-                .map(|day| run_for_repeats(day, &days, repeats.unwrap_or(1)))
-                .collect::<anyhow::Result<()>>()?,
-            Runnable::Repeat { day, repeats } => run_for_repeats(day, &days, repeats.unwrap_or(1))?,
+            } => (first..=last).try_for_each(|day| run_for_repeats(day, &days, repeats))?,
+            Runnable::Repeat { day, repeats } => run_for_repeats(day, &days, repeats)?,
         }
     }
 
