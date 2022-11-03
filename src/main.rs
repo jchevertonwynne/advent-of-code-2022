@@ -14,11 +14,14 @@ fn main() -> anyhow::Result<()> {
             Runnable::Latest { repeats } => {
                 run_for_repeats(days.len() as u32, &days, repeats.unwrap_or(1))?
             }
-            Runnable::Single { day } => run_for_repeats(day, &days, 1)?,
-            Runnable::Range { first, last } => (first..=last)
-                .map(|day| run_for_repeats(day, &days, 1))
+            Runnable::Range {
+                first,
+                last,
+                repeats,
+            } => (first..=last)
+                .map(|day| run_for_repeats(day, &days, repeats.unwrap_or(1)))
                 .collect::<anyhow::Result<()>>()?,
-            Runnable::Repeat { day, repeats } => run_for_repeats(day, &days, repeats)?,
+            Runnable::Repeat { day, repeats } => run_for_repeats(day, &days, repeats.unwrap_or(1))?,
         }
     }
 

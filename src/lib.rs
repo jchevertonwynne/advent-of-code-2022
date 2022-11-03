@@ -9,7 +9,7 @@ use nom::{
     bytes::complete::tag,
     character,
     combinator::{all_consuming, map, opt},
-    sequence::{preceded, separated_pair},
+    sequence::{pair, preceded, separated_pair},
 };
 use thiserror::Error;
 
@@ -54,10 +54,18 @@ pub fn run_for_repeats(
 
 #[derive(Debug)]
 pub enum Runnable {
-    Latest { repeats: Option<u32> },
-    Single { day: u32 },
-    Range { first: u32, last: u32 },
-    Repeat { day: u32, repeats: u32 },
+    Latest {
+        repeats: Option<u32>,
+    }, // ! !10
+    Range {
+        first: u32,
+        last: u32,
+        repeats: Option<u32>,
+    }, // 12-15 12-15:100
+    Repeat {
+        day: u32,
+        repeats: Option<u32>,
+    }, // 12 12:100
 }
 
 impl Runnable {
@@ -85,7 +93,11 @@ impl<'a> TryFrom<&'a str> for Runnable {
         let res = parse_runnable(value).map(|r| r.1)?;
 
         match res {
-            Runnable::Range { first, last } if first > last => {
+            Runnable::Range {
+                first,
+                last,
+                repeats: _,
+            } if first > last => {
                 return Err(ConversionError::OutOfOrder);
             }
             _ => {}
@@ -122,8 +134,11 @@ impl From<nom::Err<nom::error::Error<&str>>> for ConversionError {
 fn parse_runnable(input: &str) -> nom::IResult<&str, Runnable> {
     alt((
         map(parse_latest, |repeats| Runnable::Latest { repeats }),
-        map(parse_single, |day| Runnable::Single { day }),
-        map(parse_range, |(first, last)| Runnable::Range { first, last }),
+        map(parse_range, |(first, last, repeats)| Runnable::Range {
+            first,
+            last,
+            repeats,
+        }),
         map(parse_repeat, |(day, repeats)| Runnable::Repeat {
             day,
             repeats,
@@ -135,22 +150,23 @@ fn parse_latest(input: &str) -> nom::IResult<&str, Option<u32>> {
     all_consuming(preceded(tag("!"), opt(character::complete::u32)))(input)
 }
 
-fn parse_single(input: &str) -> nom::IResult<&str, u32> {
-    all_consuming(character::complete::u32)(input)
+fn parse_range(input: &str) -> nom::IResult<&str, (u32, u32, Option<u32>)> {
+    all_consuming(map(
+        pair(
+            separated_pair(character::complete::u32, tag("-"), character::complete::u32),
+            map(opt(pair(tag(":"), character::complete::u32)), |pair| {
+                pair.map(|p| p.1)
+            }),
+        ),
+        |((a, b), c)| (a, b, c),
+    ))(input)
 }
 
-fn int_sep_pair<'a>(sep: &'static str) -> impl FnMut(&'a str) -> nom::IResult<&'a str, (u32, u32)> {
-    all_consuming(separated_pair(
+fn parse_repeat(input: &str) -> nom::IResult<&str, (u32, Option<u32>)> {
+    all_consuming(pair(
         character::complete::u32,
-        tag(sep),
-        character::complete::u32,
-    ))
-}
-
-fn parse_range(input: &str) -> nom::IResult<&str, (u32, u32)> {
-    int_sep_pair("-")(input)
-}
-
-fn parse_repeat(input: &str) -> nom::IResult<&str, (u32, u32)> {
-    int_sep_pair(":")(input)
+        map(opt(pair(tag(":"), character::complete::u32)), |pair| {
+            pair.map(|p| p.1)
+        }),
+    ))(input)
 }
