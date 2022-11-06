@@ -11,7 +11,10 @@ fn main() -> anyhow::Result<()> {
 
     for runnable in runnables {
         match runnable {
-            Runnable::Latest { repeats } => run_for_repeats(days.len() as u32, &days, repeats)?,
+            Runnable::Latest { repeats } => {
+                let day = days.len().try_into().context("failed conv")?;
+                run_for_repeats(day, &days, repeats)?;
+            }
             Runnable::Range {
                 first,
                 last,

@@ -4,7 +4,7 @@ pub mod day01;
 
 pub enum Answers {
     String(String),
-    Int(usize),
+    Int(u64),
 }
 
 impl Display for Answers {

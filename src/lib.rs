@@ -2,16 +2,17 @@ pub mod days;
 
 use std::time::Instant;
 
-use crate::days::DayResult;
 use anyhow::Context;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character,
+    character::complete as character,
     combinator::{all_consuming, map, opt},
     sequence::{pair, preceded, tuple},
 };
 use thiserror::Error;
+
+use crate::days::DayResult;
 
 pub fn run_for_repeats(
     day: u32,
@@ -25,7 +26,7 @@ pub fn run_for_repeats(
     let start = Instant::now();
     let mut answer = None;
     for _ in 0..repeats {
-        answer = Some(day_fn().context("failed to run day")?)
+        answer = Some(day_fn().context("failed to run day")?);
     }
     let end = start.elapsed() / repeats;
 
@@ -54,7 +55,7 @@ pub fn run_for_repeats(
 
 #[derive(Debug)]
 pub enum Runnable {
-    Latest { repeats: u32 },                       // ! !10
+    Latest { repeats: u32 },                       // . !10
     Range { first: u32, last: u32, repeats: u32 }, // 12-15 12-15:100
     Repeat { day: u32, repeats: u32 },             // 12 12:100
 }
@@ -66,7 +67,7 @@ impl Runnable {
             runnables.push(arg.try_into().context("failed to parse runnable command")?);
         }
         if runnables.is_empty() {
-            runnables.push(Runnable::Latest { repeats: 1 })
+            runnables.push(Runnable::Latest { repeats: 1 });
         }
         Ok(runnables)
     }
@@ -138,20 +139,20 @@ fn parse_runnable(input: &str) -> nom::IResult<&str, Runnable> {
 }
 
 fn parse_latest(input: &str) -> nom::IResult<&str, Option<u32>> {
-    all_consuming(preceded(tag("!"), opt(character::complete::u32)))(input)
+    all_consuming(preceded(tag("."), opt(character::u32)))(input)
 }
 
 fn parse_range(input: &str) -> nom::IResult<&str, (u32, u32, Option<u32>)> {
     all_consuming(tuple((
-        character::complete::u32,
-        preceded(tag("-"), character::complete::u32),
-        opt(preceded(tag(":"), character::complete::u32)),
+        character::u32,
+        preceded(tag("-"), character::u32),
+        opt(preceded(tag(":"), character::u32)),
     )))(input)
 }
 
 fn parse_repeat(input: &str) -> nom::IResult<&str, (u32, Option<u32>)> {
     all_consuming(pair(
-        character::complete::u32,
-        opt(preceded(tag(":"), character::complete::u32)),
+        character::u32,
+        opt(preceded(tag(":"), character::u32)),
     ))(input)
 }
