@@ -1,6 +1,6 @@
 pub mod days;
 
-use std::time::Instant;
+use std::{time::Instant, env::Args};
 
 use anyhow::Context;
 use nom::{
@@ -14,19 +14,28 @@ use thiserror::Error;
 
 use crate::days::DayResult;
 
+pub struct DayEntry {
+    pub f: fn(&'static str) -> anyhow::Result<DayResult>,
+    pub real: &'static str,
+    pub test: &'static str,
+}
+
 pub fn run_for_repeats(
     day: u32,
-    days: &[fn() -> anyhow::Result<DayResult>],
+    days: &[DayEntry],
     repeats: u32,
+    is_test: bool,
 ) -> anyhow::Result<()> {
-    let day_fn = days
+    let DayEntry { f, real, test } = days
         .get((day - 1) as usize)
         .context("day index did not exist")?;
+
+    let input = if is_test { *test } else { *real };
 
     let start = Instant::now();
     let mut answer = None;
     for _ in 0..repeats {
-        answer = Some(day_fn().context("failed to run day")?);
+        answer = Some(f(input).context("failed to run day")?);
     }
     let end = start.elapsed() / repeats;
 
@@ -55,7 +64,7 @@ pub fn run_for_repeats(
 
 #[derive(Debug)]
 pub enum Runnable {
-    Latest { repeats: u32 },                       // . !10
+    Latest { repeats: u32 },                       // . .10
     Range { first: u32, last: u32, repeats: u32 }, // 12-15 12-15:100
     Repeat { day: u32, repeats: u32 },             // 12 12:100
 }
@@ -87,10 +96,26 @@ impl<'a> TryFrom<&'a str> for Runnable {
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
         let res = parse_runnable(value).map(|r| r.1)?;
 
-        if let Runnable::Range { first, last, .. } = res {
+        if let Runnable::Range {
+            first,
+            last,
+            repeats,
+        } = res
+        {
             if first < last {
                 return Err(ConversionError::OutOfOrder);
             }
+            if repeats == 0 {
+                return Err(ConversionError::ZeroRepeats);
+            }
+        }
+
+        if let Runnable::Repeat { repeats: 0, .. } = res {
+            return Err(ConversionError::ZeroRepeats);
+        }
+
+        if let Runnable::Range { repeats: 0, .. } = res {
+            return Err(ConversionError::ZeroRepeats);
         }
 
         Ok(res)
@@ -103,6 +128,8 @@ pub enum ConversionError {
     Incomplete,
     #[error("Day range was not increasing")]
     OutOfOrder,
+    #[error("Repeats must be one or")]
+    ZeroRepeats,
     #[error("Parse error: {0}")]
     ParseError(String),
     #[error("Parse failure: {0}")]
