@@ -1,6 +1,6 @@
 pub mod days;
 
-use std::{time::Instant, env::Args};
+use std::time::Instant;
 
 use anyhow::Context;
 use nom::{
@@ -70,7 +70,7 @@ pub enum Runnable {
 }
 
 impl Runnable {
-    pub fn load() -> anyhow::Result<Vec<Runnable>> {
+    pub fn load_all() -> anyhow::Result<Vec<Runnable>> {
         let mut runnables: Vec<Runnable> = Vec::new();
         for arg in std::env::args().skip(1) {
             runnables.push(arg.try_into().context("failed to parse runnable command")?);
