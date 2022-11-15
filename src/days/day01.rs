@@ -1,5 +1,4 @@
-use crate::days::Answers;
-use crate::days::DayResult;
+use crate::{Answers, DayResult};
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let buckets = create_buckets(input);
