@@ -7,10 +7,10 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     const P2_MULTIPLIERS: [u64; 7] = create_table(256);
 
     Ok(DayResult {
-        part1: Some(Answers::Int(
+        part1: Some(Answers::U64(
             P1_MULTIPLIERS.iter().zip(buckets).map(|(a, b)| a * b).sum(),
         )),
-        part2: Some(Answers::Int(
+        part2: Some(Answers::U64(
             P2_MULTIPLIERS.iter().zip(buckets).map(|(a, b)| a * b).sum(),
         )),
     })

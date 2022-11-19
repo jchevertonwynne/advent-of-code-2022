@@ -11,18 +11,21 @@ use nom::{
     combinator::{all_consuming, map},
     sequence::{pair, preceded},
 };
+use nom::combinator::opt;
 use thiserror::Error;
 
 pub enum Answers {
     String(String),
-    Int(u64),
+    U64(u64),
+    I32(i32),
 }
 
 impl Display for Answers {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Answers::String(s) => write!(f, "{}", s),
-            Answers::Int(i) => write!(f, "{}", i),
+            Answers::U64(i) => write!(f, "{}", i),
+            Answers::I32(i) => write!(f, "{}", i),
         }
     }
 }
@@ -66,13 +69,15 @@ pub fn run_day(day: u32, days: &[DayEntry], is_test: bool) -> anyhow::Result<()>
     println!("\t{} ms", end.as_millis());
     println!("\t{} us", end.as_micros());
     println!("\t{} ns", end.as_nanos());
+    println!();
 
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Runnable {
-    Latest,                          // .
+    Latest,                          // empty
+    All,                             // .
     Range { first: u32, last: u32 }, // 12-15
 }
 
@@ -104,7 +109,7 @@ impl<'a> TryFrom<&'a str> for Runnable {
         let res = parse_runnable(value).map(|r| r.1)?;
 
         if let Runnable::Range { first, last } = res {
-            if first < last {
+            if first > last {
                 return Err(ConversionError::OutOfOrder);
             }
         }
@@ -141,8 +146,8 @@ impl<T> From<nom::Err<nom::error::Error<T>>> for ConversionError {
 
 fn parse_runnable(input: &str) -> nom::IResult<&str, Runnable> {
     alt((
-        map(parse_latest, |_| Runnable::Latest),
-        map(parse_range, |(first, last)| Runnable::Range { first, last }),
+        map(parse_latest, |_| Runnable::All),
+        map(parse_range, |(first, last)| Runnable::Range { first, last: last.unwrap_or(first) }),
     ))(input)
 }
 
@@ -150,6 +155,16 @@ fn parse_latest(input: &str) -> nom::IResult<&str, &str> {
     all_consuming(tag("."))(input)
 }
 
-fn parse_range(input: &str) -> nom::IResult<&str, (u32, u32)> {
-    all_consuming(pair(character::u32, preceded(tag("-"), character::u32)))(input)
+fn parse_range(input: &str) -> nom::IResult<&str, (u32, Option<u32>)> {
+    all_consuming(pair(character::u32, opt(preceded(tag("-"), character::u32))))(input)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{parse_runnable, Runnable};
+
+    #[test]
+    fn parser_handles_latest() {
+        assert_eq!(parse_runnable("."), Ok(("", Runnable::All)));
+    }
 }
