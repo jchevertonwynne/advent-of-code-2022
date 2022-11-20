@@ -31,7 +31,9 @@ fn main() -> anyhow::Result<()> {
                 run_day(day, &days, is_test)?;
             }
             Runnable::All => {
-                let last = days.len().try_into()
+                let last = days
+                    .len()
+                    .try_into()
                     .context("could not convert vec len to u32")?;
                 (1..=last).try_for_each(|day| run_day(day, &days, is_test))?;
             }

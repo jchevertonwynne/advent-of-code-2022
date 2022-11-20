@@ -4,6 +4,7 @@ use std::fmt::Display;
 use std::time::Instant;
 
 use anyhow::Context;
+use nom::combinator::opt;
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -11,7 +12,6 @@ use nom::{
     combinator::{all_consuming, map},
     sequence::{pair, preceded},
 };
-use nom::combinator::opt;
 use thiserror::Error;
 
 pub enum Answers {
@@ -147,7 +147,10 @@ impl<T> From<nom::Err<nom::error::Error<T>>> for ConversionError {
 fn parse_runnable(input: &str) -> nom::IResult<&str, Runnable> {
     alt((
         map(parse_latest, |_| Runnable::All),
-        map(parse_range, |(first, last)| Runnable::Range { first, last: last.unwrap_or(first) }),
+        map(parse_range, |(first, last)| Runnable::Range {
+            first,
+            last: last.unwrap_or(first),
+        }),
     ))(input)
 }
 
@@ -156,7 +159,10 @@ fn parse_latest(input: &str) -> nom::IResult<&str, &str> {
 }
 
 fn parse_range(input: &str) -> nom::IResult<&str, (u32, Option<u32>)> {
-    all_consuming(pair(character::u32, opt(preceded(tag("-"), character::u32))))(input)
+    all_consuming(pair(
+        character::u32,
+        opt(preceded(tag("-"), character::u32)),
+    ))(input)
 }
 
 #[cfg(test)]

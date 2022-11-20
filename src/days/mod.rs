@@ -1,5 +1,5 @@
-use std::ops::{AddAssign, SubAssign};
 use num::Num;
+use std::ops::{AddAssign, SubAssign};
 
 pub mod day01;
 pub mod day02;

@@ -1,33 +1,25 @@
-use std::hint::unreachable_unchecked;
 use crate::{Answers, DayResult};
-
-use bstr::{BStr, ByteSlice};
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut horizontal: i32 = 0;
     let mut part1depth_and_part2aim: i32 = 0;
     let mut part2depth: i32 = 0;
 
-    let input = BStr::new(input);
+    let input = input.as_bytes();
 
-    for line in input.lines() {
-        match line[0] {
-            b'f' => {
-                let delta: i32 = line[8].into();
-                // let delta: i32 = byte_slice_to_int(&line[8..]);
-                horizontal += delta;
-                part2depth += part1depth_and_part2aim * delta;
-            }
-            b'd' => {
-                part1depth_and_part2aim += Into::<i32>::into(line[5]);
-                // part1depth_and_part2aim += byte_slice_to_int::<i32>(&line[5..]);
-            }
-            b'u' => {
-                part1depth_and_part2aim -= Into::<i32>::into(line[3]);
-                // part1depth_and_part2aim -= byte_slice_to_int::<i32>(&line[3..]);
-            }
-            _ => unsafe { unreachable_unchecked() },
-        }
+    let mut ind: usize = 0;
+    while ind < input.len() {
+        let f = Into::<i32>::into(input[ind] == b'f');
+        let u = Into::<i32>::into(input[ind] == b'u');
+        let d = Into::<i32>::into(input[ind] == b'd');
+        let num_ind = (8 * f as usize) + (4 * d as usize) + (2 * u as usize) + (1 * (d as usize | u as usize));
+        let num = Into::<i32>::into(input[ind + num_ind] - b'0');
+
+        horizontal += num * f;
+        part2depth += (part1depth_and_part2aim * num) * f;
+        part1depth_and_part2aim += num * (d - u);
+
+        ind += num_ind + 2;
     }
 
     Ok(DayResult {
@@ -35,4 +27,3 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
         part2: Some(Answers::I32(horizontal * part2depth)),
     })
 }
-
