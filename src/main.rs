@@ -4,7 +4,7 @@ use advent_of_code_2022::{run_day, Runnable};
 use anyhow::Context;
 
 fn main() -> anyhow::Result<()> {
-    let is_test = std::env::var("TEST").is_ok();
+    let is_test = std::env::var_os("TEST").is_some();
 
     let days = vec![
         DayEntry {
@@ -19,26 +19,21 @@ fn main() -> anyhow::Result<()> {
         },
     ];
 
-    let runnables = Runnable::load_all().context("failed to parse runnables")?;
+    let runnables =
+        Runnable::load_all(std::env::args().skip(1)).context("failed to parse runnables")?;
 
     for runnable in runnables {
         match runnable {
             Runnable::Latest => {
-                let day = days
-                    .len()
-                    .try_into()
-                    .context("could not convert vec len to u32")?;
-                run_day(day, &days, is_test)?;
+                let day = days.len() as u32;
+                run_day(day, &days[day as usize], is_test)?;
             }
             Runnable::All => {
-                let last = days
-                    .len()
-                    .try_into()
-                    .context("could not convert vec len to u32")?;
-                (1..=last).try_for_each(|day| run_day(day, &days, is_test))?;
+                let last = days.len() as u32;
+                (1..=last).try_for_each(|day| run_day(day, &days[day as usize], is_test))?;
             }
             Runnable::Range { first, last } => {
-                (first..=last).try_for_each(|day| run_day(day, &days, is_test))?;
+                (first..=last).try_for_each(|day| run_day(day, &days[day as usize], is_test))?;
             }
         }
     }

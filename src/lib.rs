@@ -14,6 +14,7 @@ use nom::{
 };
 use thiserror::Error;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Answers {
     String(String),
     U64(u64),
@@ -30,26 +31,27 @@ impl Display for Answers {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct DayResult {
     pub part1: Option<Answers>,
     pub part2: Option<Answers>,
 }
 
 pub struct DayEntry {
-    pub f: fn(&'static str) -> anyhow::Result<DayResult>,
+    pub f: fn(&'static str) -> DayResult,
     pub real: &'static str,
     pub test: &'static str,
 }
 
-pub fn run_day(day: u32, days: &[DayEntry], is_test: bool) -> anyhow::Result<()> {
-    let DayEntry { f, real, test } = days
-        .get((day - 1) as usize)
-        .context("day index did not exist")?;
-
+pub fn run_day(
+    day: u32,
+    DayEntry { f, real, test }: &DayEntry,
+    is_test: bool,
+) -> anyhow::Result<()> {
     let input = if is_test { *test } else { *real };
 
     let start = Instant::now();
-    let answer = f(input).context("failed to run day")?;
+    let answer = f(input);
     let end = start.elapsed();
 
     println!("day {}:", day);
@@ -82,10 +84,16 @@ pub enum Runnable {
 }
 
 impl Runnable {
-    pub fn load_all() -> anyhow::Result<Vec<Runnable>> {
+    pub fn load_all<I: IntoIterator<Item = T>, T: AsRef<str>>(
+        source: I,
+    ) -> anyhow::Result<Vec<Runnable>> {
         let mut runnables: Vec<Runnable> = Vec::new();
-        for arg in std::env::args().skip(1) {
-            runnables.push(arg.try_into().context("failed to parse runnable command")?);
+        for arg in source.into_iter() {
+            runnables.push(
+                arg.as_ref()
+                    .try_into()
+                    .context("failed to parse runnable command")?,
+            );
         }
         if runnables.is_empty() {
             runnables.push(Runnable::Latest);
@@ -124,8 +132,6 @@ pub enum ConversionError {
     Incomplete,
     #[error("Day range was not increasing")]
     OutOfOrder,
-    #[error("Repeats must be one or")]
-    ZeroRepeats,
     #[error("Parse error: {0}")]
     ParseError(String),
     #[error("Parse failure: {0}")]
@@ -168,6 +174,20 @@ fn parse_range(input: &str) -> nom::IResult<&str, (u32, Option<u32>)> {
 #[cfg(test)]
 mod tests {
     use crate::{parse_runnable, Runnable};
+
+    #[test]
+    fn no_args_defaults_to_latest() {
+        let runnables = Runnable::load_all::<[&str; 0], _>([]);
+        assert_eq!(runnables.is_ok(), true);
+        assert_eq!(runnables.unwrap(), vec![Runnable::Latest]);
+    }
+
+    #[test]
+    fn dot_arg_is_all() {
+        let runnables = Runnable::load_all::<_, _>(["."]);
+        assert_eq!(runnables.is_ok(), true);
+        assert_eq!(runnables.unwrap(), vec![Runnable::All]);
+    }
 
     #[test]
     fn parser_handles_latest() {

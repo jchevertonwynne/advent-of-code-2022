@@ -1,19 +1,19 @@
 use crate::{Answers, DayResult};
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str) -> DayResult {
     let buckets = create_buckets(input);
 
     const P1_MULTIPLIERS: [u64; 7] = create_table(80);
     const P2_MULTIPLIERS: [u64; 7] = create_table(256);
 
-    Ok(DayResult {
+    DayResult {
         part1: Some(Answers::U64(
             P1_MULTIPLIERS.iter().zip(buckets).map(|(a, b)| a * b).sum(),
         )),
         part2: Some(Answers::U64(
             P2_MULTIPLIERS.iter().zip(buckets).map(|(a, b)| a * b).sum(),
         )),
-    })
+    }
 }
 
 fn create_buckets(input: &str) -> [u64; 7] {
@@ -69,4 +69,23 @@ const fn create_table(turns: usize) -> [u64; 7] {
     }
 
     table
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Answers, DayResult};
+
+    use super::run;
+
+    #[test]
+    fn expected_answers() {
+        let result = run(include_str!("../../input/real/01.txt"));
+        assert_eq!(
+            result,
+            DayResult {
+                part1: Some(Answers::U64(346063)),
+                part2: Some(Answers::U64(1572358335990))
+            }
+        )
+    }
 }
