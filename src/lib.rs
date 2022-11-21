@@ -3,7 +3,6 @@ pub mod days;
 use std::fmt::Display;
 use std::time::Instant;
 
-use anyhow::Context;
 use nom::combinator::opt;
 use nom::{
     branch::alt,
@@ -89,10 +88,7 @@ impl Runnable {
     ) -> Result<Vec<Runnable>, ConversionError> {
         let mut runnables: Vec<Runnable> = Vec::new();
         for arg in source.into_iter() {
-            runnables.push(
-                arg.as_ref()
-                    .try_into()?,
-            );
+            runnables.push(arg.as_ref().try_into()?);
         }
         if runnables.is_empty() {
             runnables.push(Runnable::Latest);
