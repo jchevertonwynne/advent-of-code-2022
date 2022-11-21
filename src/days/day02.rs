@@ -12,10 +12,8 @@ pub fn run(input: &'static str) -> DayResult {
         let f = (input[ind] == b'f') as i32;
         let u = (input[ind] == b'u') as i32;
         let d = (input[ind] == b'd') as i32;
-        let num_ind = (8 * f as usize)
-            | (4 * d as usize)
-            | (2 * u as usize)
-            | (d as usize | u as usize);
+        let num_ind =
+            (8 * f as usize) | (4 * d as usize) | (2 * u as usize) | (d as usize | u as usize);
         let num = (input[ind + num_ind] - b'0') as i32;
 
         horizontal += num * f;

@@ -33,7 +33,8 @@ fn main() -> anyhow::Result<()> {
                 (1..=last).try_for_each(|day| run_day(day, &days[(day - 1) as usize], is_test))?;
             }
             Runnable::Range { first, last } => {
-                (first..=last).try_for_each(|day| run_day(day, &days[(day - 1) as usize], is_test))?;
+                (first..=last)
+                    .try_for_each(|day| run_day(day, &days[(day - 1) as usize], is_test))?;
             }
         }
     }

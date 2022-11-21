@@ -86,13 +86,12 @@ pub enum Runnable {
 impl Runnable {
     pub fn load_all<I: IntoIterator<Item = T>, T: AsRef<str>>(
         source: I,
-    ) -> anyhow::Result<Vec<Runnable>> {
+    ) -> Result<Vec<Runnable>, ConversionError> {
         let mut runnables: Vec<Runnable> = Vec::new();
         for arg in source.into_iter() {
             runnables.push(
                 arg.as_ref()
-                    .try_into()
-                    .context("failed to parse runnable command")?,
+                    .try_into()?,
             );
         }
         if runnables.is_empty() {
@@ -126,7 +125,7 @@ impl<'a> TryFrom<&'a str> for Runnable {
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Eq, PartialEq)]
 pub enum ConversionError {
     #[error("Input was incomplete")]
     Incomplete,
@@ -178,15 +177,13 @@ mod tests {
     #[test]
     fn no_args_defaults_to_latest() {
         let runnables = Runnable::load_all::<[&str; 0], _>([]);
-        assert_eq!(runnables.is_ok(), true);
-        assert_eq!(runnables.unwrap(), vec![Runnable::Latest]);
+        assert_eq!(runnables, Ok(vec![Runnable::Latest]));
     }
 
     #[test]
     fn dot_arg_is_all() {
         let runnables = Runnable::load_all::<_, _>(["."]);
-        assert_eq!(runnables.is_ok(), true);
-        assert_eq!(runnables.unwrap(), vec![Runnable::All]);
+        assert_eq!(runnables, Ok(vec![Runnable::All]));
     }
 
     #[test]
