@@ -26,14 +26,14 @@ fn main() -> anyhow::Result<()> {
         match runnable {
             Runnable::Latest => {
                 let day = days.len() as u32;
-                run_day(day, &days[day as usize], is_test)?;
+                run_day(day, &days[(day - 1) as usize], is_test)?;
             }
             Runnable::All => {
                 let last = days.len() as u32;
-                (1..=last).try_for_each(|day| run_day(day, &days[day as usize], is_test))?;
+                (1..=last).try_for_each(|day| run_day(day, &days[(day - 1) as usize], is_test))?;
             }
             Runnable::Range { first, last } => {
-                (first..=last).try_for_each(|day| run_day(day, &days[day as usize], is_test))?;
+                (first..=last).try_for_each(|day| run_day(day, &days[(day - 1) as usize], is_test))?;
             }
         }
     }
