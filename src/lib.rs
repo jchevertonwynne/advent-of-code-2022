@@ -37,7 +37,7 @@ pub struct DayResult {
 }
 
 pub struct DayEntry {
-    pub f: fn(&'static str) -> DayResult,
+    pub f: fn(&'static str) -> anyhow::Result<DayResult>,
     pub real: &'static str,
     pub test: &'static str,
 }
@@ -50,18 +50,18 @@ pub fn run_day(
     let input = if is_test { *test } else { *real };
 
     let start = Instant::now();
-    let answer = f(input);
+    let answer = f(input)?;
     let end = start.elapsed();
 
     println!("day {}:", day);
 
     if let Some(part1) = answer.part1 {
-        println!("part1:");
+        println!("part 1:");
         println!("\t{}", part1);
     }
 
     if let Some(part2) = answer.part2 {
-        println!("part2:");
+        println!("part 2:");
         println!("\t{}", part2);
     }
 
@@ -86,22 +86,16 @@ impl Runnable {
     pub fn load_all<I: IntoIterator<Item = T>, T: AsRef<str>>(
         source: I,
     ) -> Result<Vec<Runnable>, ConversionError> {
-        let mut runnables: Vec<Runnable> = Vec::new();
-        for arg in source.into_iter() {
-            runnables.push(arg.as_ref().try_into()?);
+        let mut runnables = Vec::new();
+        for cmd in source {
+            let cmd = cmd.as_ref();
+            let runnable = cmd.try_into()?;
+            runnables.push(runnable);
         }
         if runnables.is_empty() {
             runnables.push(Runnable::Latest);
         }
         Ok(runnables)
-    }
-}
-
-impl TryFrom<String> for Runnable {
-    type Error = ConversionError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        value.as_str().try_into()
     }
 }
 

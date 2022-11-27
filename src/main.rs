@@ -17,26 +17,31 @@ fn main() -> anyhow::Result<()> {
             real: include_str!("../input/real/02.txt"),
             test: include_str!("../input/test/02.txt"),
         },
+        DayEntry {
+            f: days::day03::run,
+            real: include_str!("../input/real/03.txt"),
+            test: include_str!("../input/test/03.txt"),
+        },
     ];
 
     let runnables =
         Runnable::load_all(std::env::args().skip(1)).context("failed to parse runnables")?;
 
     for runnable in runnables {
-        match runnable {
+        let days_to_run = match runnable {
             Runnable::Latest => {
                 let day = days.len() as u32;
-                run_day(day, &days[(day - 1) as usize], is_test)?;
+                day..=day
             }
             Runnable::All => {
                 let last = days.len() as u32;
-                (1..=last).try_for_each(|day| run_day(day, &days[(day - 1) as usize], is_test))?;
+                1..=last
             }
-            Runnable::Range { first, last } => {
-                (first..=last)
-                    .try_for_each(|day| run_day(day, &days[(day - 1) as usize], is_test))?;
-            }
-        }
+            Runnable::Range { first, last } => first..=last,
+        };
+        days_to_run
+            .into_iter()
+            .try_for_each(|day| run_day(day, &days[(day - 1) as usize], is_test))?;
     }
 
     Ok(())

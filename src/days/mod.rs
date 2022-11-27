@@ -3,6 +3,7 @@ use std::ops::{AddAssign, SubAssign};
 
 pub mod day01;
 pub mod day02;
+pub mod day03;
 
 #[inline(always)]
 pub fn byte_slice_to_int<T: Num + From<u8> + AddAssign + SubAssign>(slice: &[u8]) -> T {

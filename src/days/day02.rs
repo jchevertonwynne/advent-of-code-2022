@@ -1,6 +1,6 @@
 use crate::{Answers, DayResult};
 
-pub fn run(input: &'static str) -> DayResult {
+pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut horizontal: i32 = 0;
     let mut part1depth_and_part2aim: i32 = 0;
     let mut part2depth: i32 = 0;
@@ -17,16 +17,18 @@ pub fn run(input: &'static str) -> DayResult {
         let num = (input[ind + num_ind] - b'0') as i32;
 
         horizontal += num * f;
-        part2depth += (part1depth_and_part2aim * num) * f;
+        part2depth += part1depth_and_part2aim * num * f;
         part1depth_and_part2aim += num * (d - u);
 
         ind += num_ind + 2;
     }
 
-    DayResult {
+    let result = DayResult {
         part1: Some(Answers::I32(horizontal * part1depth_and_part2aim)),
         part2: Some(Answers::I32(horizontal * part2depth)),
-    }
+    };
+
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -38,12 +40,12 @@ mod tests {
     #[test]
     fn expected_answers() {
         let result = run(include_str!("../../input/real/02.txt"));
-        assert_eq!(
+        assert!(matches!(
             result,
-            DayResult {
+            Ok(DayResult {
                 part1: Some(Answers::I32(1893605)),
                 part2: Some(Answers::I32(2120734350))
-            }
-        )
+            })
+        ));
     }
 }
