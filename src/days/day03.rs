@@ -1,6 +1,7 @@
 use crate::days::day03::Side::{Left, Right};
 use crate::{Answers, DayResult};
 use anyhow::Context;
+use nonmax::NonMaxU8;
 use std::fmt::{Display, Formatter};
 use std::ops::Add;
 use thiserror::Error;
@@ -19,7 +20,7 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let part2 = snails
         .iter()
         .enumerate()
-        .flat_map(|(i, &snail)| snails[i + 1..].iter().map(move |&snail2| (snail, snail2)))
+        .flat_map(|(i, &snail1)| snails[i + 1..].iter().map(move |&snail2| (snail1, snail2)))
         .map(|(a, b)| a + b)
         .map(|s| s.magnitude())
         .max()
@@ -32,7 +33,7 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-struct SnailNumber([Option<u8>; 64]);
+struct SnailNumber([Option<NonMaxU8>; 64]);
 
 impl<'a> TryFrom<&'a str> for SnailNumber {
     type Error = SnailNumberParseError;
@@ -46,7 +47,9 @@ impl<'a> TryFrom<&'a str> for SnailNumber {
                 b'[' => snail_index = snail_index * 2 + 1,
                 b']' => snail_index = (snail_index - 1) / 2,
                 b',' => snail_index += 1,
-                b'0'..=b'9' => result[snail_index - 1] = Some(byte - b'0'),
+                b'0'..=b'9' => {
+                    result[snail_index - 1] = Some(unsafe { NonMaxU8::new_unchecked(byte - b'0') })
+                }
                 _ => return Err(SnailNumberParseError::InvalidCharacter),
             }
         }
@@ -118,8 +121,9 @@ impl SnailNumber {
     }
 
     fn add_value(&mut self, side: Side, index: usize, value: u8) {
-        if let Some(val) = self.0[index - 1].as_mut() {
-            *val += value;
+        if self.0[index - 1].is_some() {
+            self.0[index - 1] =
+                Some(unsafe { NonMaxU8::new_unchecked(self.0[index - 1].unwrap().get() + value) });
         } else {
             match side {
                 Left => self.add_value(side, index * 2 + 2, value),
@@ -129,17 +133,17 @@ impl SnailNumber {
     }
 
     fn magnitude(&self) -> u64 {
-        self._magnitude(0, 0)
+        self._magnitude(0)
     }
 
-    fn _magnitude(&self, i: usize, depth: usize) -> u64 {
+    fn _magnitude(&self, i: usize) -> u64 {
         if i != 0 {
             if let Some(val) = self.0[i - 1] {
-                return val as u64;
+                return val.get() as u64;
             }
         }
 
-        3 * self._magnitude(i * 2 + 1, depth + 1) + 2 * self._magnitude(i * 2 + 2, depth + 1)
+        3 * self._magnitude(i * 2 + 1) + 2 * self._magnitude(i * 2 + 2)
     }
 
     fn explode(&mut self) -> bool {
@@ -152,10 +156,10 @@ impl SnailNumber {
             let mut right = self.0[i * 2 + 2 - 1];
 
             if i % 2 == 0 {
-                self.add_value(Right, i - 1, left.unwrap());
+                self.add_value(Right, i - 1, left.expect("a valid snail number always has a value here for this condition to trigger").get());
                 left = None;
             } else {
-                self.add_value(Right, i + 1, right.unwrap());
+                self.add_value(Right, i + 1, right.expect("a valid snail number always has a value here for this condition to trigger").get());
                 right = None;
             }
 
@@ -181,7 +185,7 @@ impl SnailNumber {
         let left_result = self._explode(i * 2 + 1, depth + 1);
         result.explosion_done |= left_result.explosion_done;
         if left_result.source {
-            self.0[i * 2 + 1 - 1] = Some(0);
+            self.0[i * 2 + 1 - 1] = Some(NonMaxU8::default());
         }
 
         self._explode_result_handler(i, &left_result, &mut result);
@@ -193,7 +197,7 @@ impl SnailNumber {
         let right_result = self._explode(i * 2 + 2, depth + 1);
         result.explosion_done |= right_result.explosion_done;
         if right_result.source {
-            self.0[i * 2 + 2 - 1] = Some(0);
+            self.0[i * 2 + 2 - 1] = Some(NonMaxU8::default());
         }
 
         self._explode_result_handler(i, &right_result, &mut result);
@@ -201,10 +205,15 @@ impl SnailNumber {
         result
     }
 
-    fn _explode_result_handler(&mut self, i: usize, side_result: &ExplodeResult, result: &mut ExplodeResult) {
+    fn _explode_result_handler(
+        &mut self,
+        i: usize,
+        side_result: &ExplodeResult,
+        result: &mut ExplodeResult,
+    ) {
         if let Some(left) = side_result.left {
             if i % 2 == 0 && i != 0 {
-                self.add_value(Left, i - 1, left);
+                self.add_value(Left, i - 1, left.get());
             } else {
                 result.left = Some(left);
             }
@@ -212,7 +221,7 @@ impl SnailNumber {
 
         if let Some(right) = side_result.right {
             if i % 2 == 1 {
-                self.add_value(Right, i + 1, right);
+                self.add_value(Right, i + 1, right.get());
             } else {
                 result.right = Some(right);
             }
@@ -220,18 +229,19 @@ impl SnailNumber {
     }
 
     fn split(&mut self) -> bool {
-        self._split(0, 0)
+        self._split(0)
     }
 
-    fn _split(&mut self, i: usize, depth: usize) -> bool {
+    fn _split(&mut self, i: usize) -> bool {
         if i != 0 {
             if let Some(val) = self.0[i - 1] {
+                let val = val.get();
                 return if val >= 10 {
                     let left = val / 2;
                     let right = val - left;
                     self.0[i - 1] = None;
-                    self.0[i * 2 + 1 - 1] = Some(left);
-                    self.0[i * 2 + 2 - 1] = Some(right);
+                    self.0[i * 2 + 1 - 1] = Some(unsafe { NonMaxU8::new_unchecked(left) });
+                    self.0[i * 2 + 2 - 1] = Some(unsafe { NonMaxU8::new_unchecked(right) });
                     true
                 } else {
                     false
@@ -239,7 +249,7 @@ impl SnailNumber {
             }
         }
 
-        self._split(i * 2 + 1, depth + 1) || self._split(i * 2 + 2, depth + 1)
+        self._split(i * 2 + 1) || self._split(i * 2 + 2)
     }
 }
 
@@ -249,8 +259,8 @@ enum Side {
 }
 
 struct ExplodeResult {
-    left: Option<u8>,
-    right: Option<u8>,
+    left: Option<NonMaxU8>,
+    right: Option<NonMaxU8>,
     explosion_done: bool,
     source: bool,
 }
