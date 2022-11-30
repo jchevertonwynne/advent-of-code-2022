@@ -1,4 +1,4 @@
-use crate::{Answers, DayResult};
+use crate::{DayResult, IntoDayResult};
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let buckets = create_buckets(input);
@@ -6,16 +6,11 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     const P1_MULTIPLIERS: [u64; 7] = create_table(80);
     const P2_MULTIPLIERS: [u64; 7] = create_table(256);
 
-    let result = DayResult {
-        part1: Some(Answers::U64(
-            P1_MULTIPLIERS.iter().zip(buckets).map(|(a, b)| a * b).sum(),
-        )),
-        part2: Some(Answers::U64(
-            P2_MULTIPLIERS.iter().zip(buckets).map(|(a, b)| a * b).sum(),
-        )),
-    };
-
-    Ok(result)
+    (
+        P1_MULTIPLIERS.iter().zip(buckets).map(|(a, b)| a * b).sum::<u64>(),
+        P2_MULTIPLIERS.iter().zip(buckets).map(|(a, b)| a * b).sum::<u64>(),
+    )
+        .into_result()
 }
 
 fn create_buckets(input: &str) -> [u64; 7] {

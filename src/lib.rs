@@ -13,59 +13,69 @@ use nom::{
 };
 use thiserror::Error;
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum Answers {
-    String(String),
-    U64(u64),
-    I32(i32),
-}
-
-impl Into<anyhow::Result<DayResult>> for DayResult {
-    fn into(self) -> anyhow::Result<DayResult> {
-        Ok(self)
-    }
-}
-
-impl<A: Into<Answers>> From<A> for DayResult {
-    fn from(a: A) -> Self {
-        DayResult {
-            part1: Some(a.into()),
-            part2: None,
+macro_rules! impl_answer_enum {
+    ( $( ($t:tt, $ty:ty) ),* ) => {
+        #[derive(Debug, PartialEq, Eq)]
+        pub enum Answers {
+            $(
+                $t($ty),
+            )*
         }
-    }
-}
 
-impl<A: Into<Answers>, B: Into<Answers>> From<(A, B)> for DayResult {
-    fn from((a, b): (A, B)) -> Self {
-        DayResult {
-            part1: Some(a.into()),
-            part2: Some(b.into()),
-        }
-    }
-}
-
-#[macro_export]
-macro_rules! impl_answer_from {
-    ( $( ($t:ty, $e:tt) ),* ) => {
         $(
-            impl From<$t> for Answers {
-                fn from(from: $t) -> Self {
-                    Answers::$e(from)
+            impl From<$ty> for Answers {
+                fn from(t: $ty) -> Self {
+                    Answers::$t(t)
                 }
             }
         )*
+
+        // assumes all types impl Display
+        impl Display for Answers {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $(
+                        Answers::$t(t) => write!(f, "{}", t),
+                    )*
+                }
+            }
+        }
     }
 }
 
-impl_answer_from!((String, String), (u64, U64), (i32, I32));
+impl_answer_enum!{
+    (String, String),
+    (U64, u64),
+    (I32, i32)
+}
 
-impl Display for Answers {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Answers::String(s) => write!(f, "{}", s),
-            Answers::U64(i) => write!(f, "{}", i),
-            Answers::I32(i) => write!(f, "{}", i),
-        }
+pub trait IntoDayResult {
+    fn into_result(self) -> anyhow::Result<DayResult>;
+}
+
+impl<A> IntoDayResult for A
+where
+    A: Into<Answers>,
+{
+    fn into_result(self) -> anyhow::Result<DayResult> {
+        Ok(DayResult {
+            part1: Some(self.into()),
+            part2: None,
+        })
+    }
+}
+
+impl<A, B> IntoDayResult for (A, B)
+where
+    A: Into<Answers>,
+    B: Into<Answers>,
+{
+    fn into_result(self) -> anyhow::Result<DayResult> {
+        let (a, b) = self;
+        Ok(DayResult {
+            part1: Some(a.into()),
+            part2: Some(b.into()),
+        })
     }
 }
 

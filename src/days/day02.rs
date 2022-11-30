@@ -1,4 +1,4 @@
-use crate::{Answers, DayResult};
+use crate::{DayResult, IntoDayResult};
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut horizontal: i32 = 0;
@@ -23,12 +23,11 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
         ind += num_ind + 2;
     }
 
-    let result = DayResult {
-        part1: Some(Answers::I32(horizontal * part1depth_and_part2aim)),
-        part2: Some(Answers::I32(horizontal * part2depth)),
-    };
-
-    Ok(result)
+    (
+        horizontal * part1depth_and_part2aim,
+        horizontal & part2depth,
+    )
+        .into_result()
 }
 
 #[cfg(test)]

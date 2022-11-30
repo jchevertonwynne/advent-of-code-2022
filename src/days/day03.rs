@@ -1,5 +1,5 @@
 use crate::days::day03::Side::{Left, Right};
-use crate::DayResult;
+use crate::{DayResult, IntoDayResult};
 use anyhow::Context;
 use nonmax::NonMaxU8;
 use std::fmt::{Display, Formatter};
@@ -26,7 +26,7 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
         .max()
         .context("expected a snail")?;
 
-    Ok((part1, part2).into())
+    (part1, part2).into_result()
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
