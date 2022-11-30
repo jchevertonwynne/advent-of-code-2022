@@ -1,5 +1,5 @@
 use crate::days::day03::Side::{Left, Right};
-use crate::{Answers, DayResult};
+use crate::DayResult;
 use anyhow::Context;
 use nonmax::NonMaxU8;
 use std::fmt::{Display, Formatter};
@@ -26,10 +26,7 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
         .max()
         .context("expected a snail")?;
 
-    Ok(DayResult {
-        part1: Some(Answers::U64(part1)),
-        part2: Some(Answers::U64(part2)),
-    })
+    Ok((part1, part2).into())
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -121,9 +118,9 @@ impl SnailNumber {
     }
 
     fn add_value(&mut self, side: Side, index: usize, value: u8) {
-        if self.0[index - 1].is_some() {
-            self.0[index - 1] =
-                Some(unsafe { NonMaxU8::new_unchecked(self.0[index - 1].unwrap().get() + value) });
+        if let Some(val) = self.0[index - 1].as_mut() {
+            let raw_val = val.get();
+            *val = unsafe { NonMaxU8::new_unchecked(raw_val + value) }
         } else {
             match side {
                 Left => self.add_value(side, index * 2 + 2, value),
@@ -156,10 +153,12 @@ impl SnailNumber {
             let mut right = self.0[i * 2 + 2 - 1];
 
             if i % 2 == 0 {
-                self.add_value(Right, i - 1, left.expect("a valid snail number always has a value here for this condition to trigger").get());
+                let left_val = left.expect("a valid snail number always has a value here for this condition to trigger").get();
+                self.add_value(Right, i - 1, left_val);
                 left = None;
             } else {
-                self.add_value(Right, i + 1, right.expect("a valid snail number always has a value here for this condition to trigger").get());
+                let right_val = right.expect("a valid snail number always has a value here for this condition to trigger").get();
+                self.add_value(Right, i + 1, right_val);
                 right = None;
             }
 

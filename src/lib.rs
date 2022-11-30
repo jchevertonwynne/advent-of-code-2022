@@ -20,6 +20,45 @@ pub enum Answers {
     I32(i32),
 }
 
+impl Into<anyhow::Result<DayResult>> for DayResult {
+    fn into(self) -> anyhow::Result<DayResult> {
+        Ok(self)
+    }
+}
+
+impl<A: Into<Answers>> From<A> for DayResult {
+    fn from(a: A) -> Self {
+        DayResult {
+            part1: Some(a.into()),
+            part2: None,
+        }
+    }
+}
+
+impl<A: Into<Answers>, B: Into<Answers>> From<(A, B)> for DayResult {
+    fn from((a, b): (A, B)) -> Self {
+        DayResult {
+            part1: Some(a.into()),
+            part2: Some(b.into()),
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! impl_answer_from {
+    ( $( ($t:ty, $e:tt) ),* ) => {
+        $(
+            impl From<$t> for Answers {
+                fn from(from: $t) -> Self {
+                    Answers::$e(from)
+                }
+            }
+        )*
+    }
+}
+
+impl_answer_from!((String, String), (u64, U64), (i32, I32));
+
 impl Display for Answers {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
