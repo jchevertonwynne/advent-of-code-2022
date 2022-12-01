@@ -4,14 +4,12 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut calorie_sums = [0; 3];
 
     let input = input.as_bytes();
-    let mut i: usize = 0;
     let mut curr_int: u32 = 0;
     let mut sum = 0;
     let mut last_newline = 0;
 
-    while i < input.len() {
-        let char = input[i];
-        match char {
+    for (i, &byte) in input.iter().enumerate() {
+        match byte {
             b'\n' => {
                 if last_newline + 1 == i {
                     if sum > calorie_sums[0] {
@@ -32,11 +30,10 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
                 }
             }
             b'0'..=b'9' => {
-                curr_int = curr_int * 10 + (char - b'0') as u32;
+                curr_int = curr_int * 10 + (byte - b'0') as u32;
             }
             _ => unreachable!()
         }
-        i += 1;
     }
 
     let part1 = calorie_sums[0];
