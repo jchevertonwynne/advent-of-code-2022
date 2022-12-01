@@ -43,7 +43,7 @@ macro_rules! impl_answer_enum {
     }
 }
 
-impl_answer_enum!{
+impl_answer_enum! {
     (String, String),
     (U64, u64),
     (I32, i32)
@@ -51,6 +51,15 @@ impl_answer_enum!{
 
 pub trait IntoDayResult {
     fn into_result(self) -> anyhow::Result<DayResult>;
+}
+
+impl IntoDayResult for () {
+    fn into_result(self) -> anyhow::Result<DayResult> {
+        Ok(DayResult {
+            part1: None,
+            part2: None,
+        })
+    }
 }
 
 impl<A> IntoDayResult for A
