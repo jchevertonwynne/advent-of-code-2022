@@ -14,18 +14,18 @@ use nom::{
 use thiserror::Error;
 
 macro_rules! impl_answer_enum {
-    ( $( ($t:tt, $ty:ty) ),* ) => {
+    ( $( ($variant:tt, $ty:ty) ),* ) => {
         #[derive(Debug, PartialEq, Eq)]
         pub enum Answers {
             $(
-                $t($ty),
+                $variant($ty),
             )*
         }
 
         $(
             impl From<$ty> for Answers {
                 fn from(t: $ty) -> Self {
-                    Answers::$t(t)
+                    Answers::$variant(t)
                 }
             }
         )*
@@ -35,7 +35,7 @@ macro_rules! impl_answer_enum {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match self {
                     $(
-                        Answers::$t(t) => write!(f, "{}", t),
+                        Answers::$variant(t) => write!(f, "{}", t),
                     )*
                 }
             }
