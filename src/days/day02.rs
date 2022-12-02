@@ -64,9 +64,9 @@ impl Hand {
 impl From<Hand> for u32 {
     fn from(hand: Hand) -> Self {
         match hand {
-            Hand::Rock => 1,
-            Hand::Paper => 2,
-            Hand::Scissors => 3,
+            Rock => 1,
+            Paper => 2,
+            Scissors => 3,
         }
     }
 }
@@ -76,12 +76,12 @@ impl TryFrom<u8> for Hand {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            b'A' => Ok(Hand::Rock),
-            b'B' => Ok(Hand::Paper),
-            b'C' => Ok(Hand::Scissors),
-            b'X' => Ok(Hand::Rock),
-            b'Y' => Ok(Hand::Paper),
-            b'Z' => Ok(Hand::Scissors),
+            b'A' => Ok(Rock),
+            b'B' => Ok(Paper),
+            b'C' => Ok(Scissors),
+            b'X' => Ok(Rock),
+            b'Y' => Ok(Paper),
+            b'Z' => Ok(Scissors),
             _ => Err(HandParseError::InvalidChar(value)),
         }
     }
@@ -95,16 +95,12 @@ enum HandParseError {
 
 impl Hand {
     fn is_win(you: Hand, opp: Hand) -> MatchResult {
-        match (you, opp) {
-            (Hand::Rock, Hand::Rock) => Draw,
-            (Hand::Rock, Hand::Paper) => Loss,
-            (Hand::Rock, Hand::Scissors) => Win,
-            (Hand::Paper, Hand::Rock) => Win,
-            (Hand::Paper, Hand::Paper) => Draw,
-            (Hand::Paper, Hand::Scissors) => Loss,
-            (Hand::Scissors, Hand::Rock) => Loss,
-            (Hand::Scissors, Hand::Paper) => Win,
-            (Hand::Scissors, Hand::Scissors) => Draw,
+        if you.loses() == opp {
+            Loss
+        } else if you.beats() == opp {
+            Win
+        } else {
+            Draw
         }
     }
 }
@@ -148,16 +144,28 @@ impl From<MatchResult> for u32 {
 #[cfg(test)]
 mod tests {
     use super::run;
-    use crate::DayResult;
+    use crate::{Answers, DayResult};
 
     #[test]
-    fn test_answers() {
-        let result = run(include_str!("../../input/real/01.txt"));
+    fn test_example_answers() {
+        let result = run(include_str!("../../input/test/02.txt"));
         assert!(matches!(
             result,
             Ok(DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(Answers::U32(15)),
+                part2: Some(Answers::U32(12)),
+            })
+        ));
+    }
+
+    #[test]
+    fn test_answers() {
+        let result = run(include_str!("../../input/real/02.txt"));
+        assert!(matches!(
+            result,
+            Ok(DayResult {
+                part1: Some(Answers::U32(9241)),
+                part2: Some(Answers::U32(14610)),
             })
         ));
     }
