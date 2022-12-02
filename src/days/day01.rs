@@ -50,24 +50,24 @@ mod tests {
     #[test]
     fn test_example_answers() {
         let result = run(include_str!("../../input/test/01.txt"));
-        assert!(matches!(
-            result,
-            Ok(DayResult {
+        assert_eq!(
+            result.unwrap(),
+            DayResult {
                 part1: Some(Answers::U32(24000)),
                 part2: Some(Answers::U32(45000)),
-            })
-        ));
+            }
+        );
     }
 
     #[test]
     fn test_answers() {
         let result = run(include_str!("../../input/real/01.txt"));
-        assert!(matches!(
-            result,
-            Ok(DayResult {
+        assert_eq!(
+            result.unwrap(),
+            DayResult {
                 part1: Some(Answers::U32(69836)),
                 part2: Some(Answers::U32(207968)),
-            })
-        ));
+            }
+        );
     }
 }
