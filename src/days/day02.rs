@@ -9,9 +9,8 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
 
     let input = input.as_bytes();
 
-    for (first, second) in (0..)
+    for (first, second) in (0..input.len())
         .step_by(4)
-        .take_while(|&i| i < input.len())
         .map(|i| (input[i], input[i + 2]))
     {
         let opp: Hand = first.try_into()?;
