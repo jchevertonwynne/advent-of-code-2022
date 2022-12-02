@@ -32,7 +32,7 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
             b'0'..=b'9' => {
                 curr_int = curr_int * 10 + (byte - b'0') as u32;
             }
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 

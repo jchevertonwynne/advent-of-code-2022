@@ -6,11 +6,18 @@ use anyhow::Context;
 fn main() -> anyhow::Result<()> {
     let is_test = std::env::var_os("TEST").is_some();
 
-    let days = vec![DayEntry {
-        f: days::day01::run,
-        real: include_str!("../input/real/01.txt"),
-        test: include_str!("../input/test/01.txt"),
-    }];
+    let days = vec![
+        DayEntry {
+            f: days::day01::run,
+            real: include_str!("../input/real/01.txt"),
+            test: include_str!("../input/test/01.txt"),
+        },
+        DayEntry {
+            f: days::day02::run,
+            real: include_str!("../input/real/02.txt"),
+            test: include_str!("../input/test/02.txt"),
+        },
+    ];
 
     let runnables =
         Runnable::load_all(std::env::args().skip(1)).context("failed to parse runnables")?;
