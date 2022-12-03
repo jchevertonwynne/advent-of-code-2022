@@ -8,9 +8,9 @@ const LOOKUP: [u64; 64] = [
 ];
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
-    let (res, _) = BStr::new(input).lines().enumerate().fold(
-        ((0_u64, 0_u64), u64::MAX),
-        |((mut part1, mut part2), mut group), (i, line)| {
+    let (part1, part2, _) = BStr::new(input).lines().enumerate().fold(
+        (0_u64, 0_u64, u64::MAX),
+        |(mut part1, mut part2, mut group), (i, line)| {
             let (a, b) = line.split_at(line.len() / 2);
             let (a, b) = a
                 .iter()
@@ -26,10 +26,10 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
                 part2 += LOOKUP[group.trailing_zeros() as usize];
                 group = u64::MAX;
             }
-            ((part1, part2), group)
+            (part1, part2, group)
         },
     );
-    res.into_result()
+    (part1, part2).into_result()
 }
 
 #[cfg(test)]
