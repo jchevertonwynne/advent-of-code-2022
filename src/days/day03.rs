@@ -48,8 +48,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(Answers::U32(157)),
-                part2: Some(Answers::U32(70)),
+                part1: Some(Answers::U64(157)),
+                part2: Some(Answers::U64(70)),
             }
         );
     }
@@ -60,8 +60,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(Answers::U32(8085)),
-                part2: Some(Answers::U32(2515)),
+                part1: Some(Answers::U64(8085)),
+                part2: Some(Answers::U64(2515)),
             }
         );
     }

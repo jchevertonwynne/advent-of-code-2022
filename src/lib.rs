@@ -15,7 +15,7 @@ use thiserror::Error;
 
 macro_rules! impl_answer_enum {
     ( $( ($variant:tt, $ty:ty) ),* ) => {
-        #[derive(Debug, PartialEq, Eq)]
+        #[derive(Debug)]
         pub enum Answers {
             $(
                 $variant($ty),
@@ -38,6 +38,24 @@ macro_rules! impl_answer_enum {
                         Answers::$variant(t) => write!(f, "{}", t),
                     )*
                 }
+            }
+        }
+
+        impl Eq for Answers {}
+
+        impl PartialEq for Answers {
+            fn eq(&self, other: &Self) -> bool {
+                let val_self = match self {
+                    $(
+                    Answers::$variant(v) => format!("{v}"),
+                    )*
+                };
+                let val_other = match other {
+                    $(
+                    Answers::$variant(v) => format!("{v}"),
+                    )*
+                };
+                val_self == val_other
             }
         }
     }
