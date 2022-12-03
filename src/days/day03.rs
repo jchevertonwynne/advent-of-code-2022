@@ -1,57 +1,40 @@
 use crate::{DayResult, IntoDayResult};
-use anyhow::Context;
 use bstr::{BStr, ByteSlice};
+
+const LOOKUP: [u64; 58] = [
+    27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+    51, 52, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+    20, 21, 22, 23, 24, 25, 26,
+];
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut part1 = 0;
     let mut part2 = 0;
 
-    let mut grouped = [true; 52];
+    let mut grouped = u64::MAX;
 
     let input = BStr::new(input);
 
     for (i, line) in input.lines().enumerate() {
         let (a, b) = line.split_at(line.len() / 2);
-        let mut seen1 = [false; 52];
-        for &item in a {
-            seen1[to_position(item) - 1] = true;
-        }
-        let mut seen2 = [false; 52];
-        for &item in b {
-            seen2[to_position(item) - 1] = true;
-        }
+        let (a, b) = a
+            .iter()
+            .zip(b.iter())
+            .fold((0_u64, 0_u64), |(acc_a, acc_b), (&a, &b)| {
+                (acc_a | (1 << (a - b'A')), acc_b | 1 << (b - b'A'))
+            });
 
-        for (i, (a, (b, c))) in grouped
-            .iter_mut()
-            .zip(seen1.iter().zip(seen2.iter()))
-            .enumerate()
-        {
-            *a &= *b | *c;
-            if *b && *c {
-                part1 += i + 1;
-            }
-        }
+        part1 += LOOKUP[(a & b).trailing_zeros() as usize];
+
+        grouped &= a | b;
 
         if i % 3 == 2 {
-            part2 += grouped
-                .iter()
-                .position(|&b| b)
-                .context("no index remained true")?
-                + 1;
-            grouped = [true; 52];
+            part2 += LOOKUP[grouped.trailing_zeros() as usize];
+            grouped = u64::MAX;
         }
     }
 
     (part1, part2).into_result()
-}
-
-fn to_position(b: u8) -> usize {
-    let b = match b {
-        b'a'..=b'z' => b - b'a' + 1,
-        b'A'..=b'Z' => b - b'A' + 27,
-        _ => unreachable!(),
-    };
-    b as usize
 }
 
 #[cfg(test)]
@@ -65,8 +48,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(Answers::Usize(157)),
-                part2: Some(Answers::Usize(70)),
+                part1: Some(Answers::U32(157)),
+                part2: Some(Answers::U32(70)),
             }
         );
     }
@@ -77,8 +60,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(Answers::Usize(8085)),
-                part2: Some(Answers::Usize(2515)),
+                part1: Some(Answers::U32(8085)),
+                part2: Some(Answers::U32(2515)),
             }
         );
     }
