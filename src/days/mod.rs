@@ -4,6 +4,7 @@ use std::ops::{Add, Mul, Sub};
 pub mod day01;
 pub mod day02;
 pub mod day03;
+pub mod day04;
 
 #[inline(always)]
 pub fn byte_slice_to_int<T: Num + From<u8> + Add + Sub + Mul + Copy>(slice: &[u8]) -> T {

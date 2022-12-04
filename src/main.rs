@@ -22,6 +22,11 @@ fn main() -> anyhow::Result<()> {
             real: include_str!("../input/real/03.txt"),
             test: include_str!("../input/test/03.txt"),
         },
+        DayEntry {
+            f: days::day04::run,
+            real: include_str!("../input/real/04.txt"),
+            test: include_str!("../input/test/04.txt"),
+        },
     ];
 
     let runnables =

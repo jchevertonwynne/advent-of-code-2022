@@ -50,24 +50,6 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     (part1, part2).into_result()
 }
 
-pub fn run2(input: &'static str) -> anyhow::Result<DayResult> {
-    let (p1, p2) = input
-        .split("\n\n")
-        .try_fold((0, [0u32; 4]), |(p1, mut part2_arr), group| {
-            group
-                .lines()
-                .map(|line| line.parse::<u32>())
-                .sum::<Result<u32, _>>()
-                .map(|calories| {
-                    part2_arr[0] = calories;
-                    part2_arr.sort();
-                    (std::cmp::max(p1, calories), part2_arr)
-                })
-        })?;
-
-    (p1, p2.into_iter().skip(1).sum::<u32>()).into_result()
-}
-
 #[cfg(test)]
 mod tests {
     use super::run;
