@@ -75,6 +75,12 @@ impl_answer_enum! {
     (I8, i8)
 }
 
+impl From<&'_ str> for Answers {
+    fn from(s: &'_ str) -> Self {
+        Answers::String(s.to_string())
+    }
+}
+
 pub trait IntoDayResult {
     fn into_result(self) -> anyhow::Result<DayResult>;
 }

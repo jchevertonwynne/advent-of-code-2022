@@ -1,77 +1,71 @@
 use crate::{DayResult, IntoDayResult};
 use anyhow::Context;
-use regex::Regex;
+use nom::bytes::complete::tag;
+use nom::sequence::{preceded, tuple};
+use nom::IResult;
+use std::collections::VecDeque;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
-    let lines = input.lines().collect::<Vec<_>>();
+    let mut lines_iter = input.lines();
 
-    let mut i = 0;
-    while lines[i].as_bytes()[0] == b' ' {
-        i += 1;
-    }
-    while lines[i].as_bytes()[0] == b'[' {
-        i += 1;
-    }
+    let mut cranes_part1: Vec<VecDeque<char>> = vec![];
 
-    let commands = i + 2;
-
-    let mut cranes_part1: Vec<Vec<char>> = vec![Vec::new(); (1..lines[i].len()).step_by(4).count()];
-
-    while i != 0 {
-        i -= 1;
-        for (col, ind) in (1..lines[i].len()).step_by(4).enumerate() {
-            let c = lines[i].as_bytes()[ind];
+    for line in &mut lines_iter {
+        let line = line.as_bytes();
+        let f = line[1];
+        if f != b' ' && !(b'A'..=b'Z').contains(&f) {
+            break;
+        }
+        cranes_part1.resize_with((1..line.len()).step_by(4).count(), VecDeque::new);
+        for (col, &c) in line.iter().skip(1).step_by(4).enumerate() {
             if c.is_ascii_alphabetic() {
-                cranes_part1[col].push(c as char);
+                cranes_part1[col].push_front(c as char);
             }
         }
     }
 
     let mut cranes_part2 = cranes_part1.clone();
 
-    let re = Regex::new(r"move (?P<count>\d+) from (?P<start>\d+) to (?P<dest>\d+)")
-        .context("failed to parse regex")?;
+    for command in lines_iter.skip(1) {
+        let (count, start, dest) = parse_line(command)?.1;
 
-    let mut stack = Vec::new();
+        for pos in 0..count {
+            let item = cranes_part1[(start - 1) as usize]
+                .pop_back()
+                .context("failed to pop from cranes")?;
+            cranes_part1[(dest - 1) as usize].push_back(item);
 
-    for command in &lines[commands..] {
-        let c = re.captures(command).context("failed to parse command")?;
-        let count = c["count"]
-            .parse::<usize>()
-            .context("failed to parse count")?;
-        let start = c["start"]
-            .parse::<usize>()
-            .context("failed to parse start")?;
-        let dest = c["dest"].parse::<usize>().context("failed to parse dest")?;
+            let item = cranes_part2[(start - 1) as usize]
+                [cranes_part2[(start - 1) as usize].len() - (count - pos) as usize];
+            cranes_part2[(dest - 1) as usize].push_back(item);
+        }
 
         for _ in 0..count {
-            let item = cranes_part1[start - 1]
-                .pop()
-                .context("failed to pop from cranes")?;
-            cranes_part1[dest - 1].push(item);
-
-            let item = cranes_part2[start - 1].pop().context("exp an item")?;
-            stack.push(item);
+            cranes_part2[(start - 1) as usize].pop_back();
         }
-
-        for &item in stack.iter().rev() {
-            cranes_part2[dest - 1].push(item);
-        }
-        stack.clear();
     }
 
     let part1 = cranes_part1
         .iter()
-        .map(|c| c.last())
+        .map(|c| c.back())
         .collect::<Option<String>>()
         .context("a crane had no contents")?;
+
     let part2 = cranes_part2
         .iter()
-        .map(|c| c.last())
+        .map(|c| c.back())
         .collect::<Option<String>>()
         .context("a crane had no contents")?;
 
     (part1, part2).into_result()
+}
+
+fn parse_line(line: &str) -> IResult<&str, (u32, u32, u32)> {
+    tuple((
+        preceded(tag("move "), nom::character::complete::u32),
+        preceded(tag(" from "), nom::character::complete::u32),
+        preceded(tag(" to "), nom::character::complete::u32),
+    ))(line)
 }
 
 #[cfg(test)]
@@ -85,8 +79,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some("CMZ".to_string().into()),
-                part2: Some("MCD".to_string().into()),
+                part1: Some("CMZ".into()),
+                part2: Some("MCD".into()),
             }
         );
     }
@@ -97,8 +91,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some("CNSZFDVLJ".to_string().into()),
-                part2: Some("QNDWLMGNS".to_string().into()),
+                part1: Some("CNSZFDVLJ".into()),
+                part2: Some("QNDWLMGNS".into()),
             }
         );
     }
