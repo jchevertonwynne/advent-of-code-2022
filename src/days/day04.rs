@@ -13,9 +13,10 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
                 let [a, b, c, d] = nums;
                 part1 += (((a >= c) & (b <= d)) | ((c >= a) & (d <= b))) as usize;
 
-                part2 +=
-                    ((a <= c) & (b >= c) | (a <= d) & (b >= d) | (a <= d) & (c <= a) | (b >= c) & (d >= b))
-                        as usize;
+                part2 += ((a <= c) & (b >= c)
+                    | (a <= d) & (b >= d)
+                    | (a <= d) & (c <= a)
+                    | (b >= c) & (d >= b)) as usize;
                 nums = [0; 4];
                 curr = 0;
             }

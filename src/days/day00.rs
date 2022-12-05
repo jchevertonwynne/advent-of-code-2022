@@ -7,7 +7,7 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
 #[cfg(test)]
 mod tests {
     use super::run;
-    use crate::{Answers, DayResult};
+    use crate::{DayResult};
 
     #[test]
     fn test_example_answers() {
@@ -23,7 +23,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/0.txt"));
+        let result = run(include_str!("../../input/real/00.txt"));
         assert_eq!(
             result.unwrap(),
             DayResult {
