@@ -15,10 +15,7 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
 
     let commands = i + 2;
 
-    let mut cranes_part1: Vec<Vec<char>> = Vec::new();
-    for _ in (1..lines[i].len()).step_by(4) {
-        cranes_part1.push(Vec::new());
-    }
+    let mut cranes_part1: Vec<Vec<char>> = vec![Vec::new(); (1..lines[i].len()).step_by(4).count()];
 
     while i != 0 {
         i -= 1;
@@ -63,14 +60,16 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
         stack.clear();
     }
 
-    let mut part1 = String::with_capacity(cranes_part1.len());
-    for crane in &cranes_part1 {
-        part1.push(*crane.last().context("expected a top iten")?);
-    }
-    let mut part2 = String::with_capacity(cranes_part2.len());
-    for crane in &cranes_part2 {
-        part2.push(*crane.last().context("expected a top iten")?);
-    }
+    let part1 = cranes_part1
+        .iter()
+        .map(|c| c.last())
+        .collect::<Option<String>>()
+        .context("a crane had no contents")?;
+    let part2 = cranes_part2
+        .iter()
+        .map(|c| c.last())
+        .collect::<Option<String>>()
+        .context("a crane had no contents")?;
 
     (part1, part2).into_result()
 }
@@ -78,7 +77,7 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
 #[cfg(test)]
 mod tests {
     use super::run;
-    use crate::{DayResult};
+    use crate::DayResult;
 
     #[test]
     fn test_example_answers() {
