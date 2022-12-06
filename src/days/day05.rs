@@ -3,12 +3,11 @@ use anyhow::Context;
 use nom::bytes::complete::tag;
 use nom::sequence::{preceded, tuple};
 use nom::IResult;
-use std::collections::VecDeque;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut lines_iter = input.lines();
 
-    let mut cranes_part1: Vec<VecDeque<char>> = vec![];
+    let mut cranes_part1: Vec<Vec<char>> = vec![];
 
     for line in &mut lines_iter {
         let line = line.as_bytes();
@@ -16,12 +15,16 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
         if f != b' ' && !(b'A'..=b'Z').contains(&f) {
             break;
         }
-        cranes_part1.resize_with((1..line.len()).step_by(4).count(), VecDeque::new);
+        cranes_part1.resize_with((1..line.len()).step_by(4).count(), Vec::new);
         for (col, &c) in line.iter().skip(1).step_by(4).enumerate() {
             if c.is_ascii_alphabetic() {
-                cranes_part1[col].push_front(c as char);
+                cranes_part1[col].push(c as char);
             }
         }
+    }
+
+    for crane in &mut cranes_part1 {
+        crane.reverse();
     }
 
     let mut cranes_part2 = cranes_part1.clone();
@@ -29,31 +32,29 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     for command in lines_iter.skip(1) {
         let (count, start, dest) = parse_line(command)?.1;
 
-        for pos in 0..count {
-            let item = cranes_part1[(start - 1) as usize]
-                .pop_back()
-                .context("failed to pop from cranes")?;
-            cranes_part1[(dest - 1) as usize].push_back(item);
+        let mut fake = Vec::new();
+        std::mem::swap(&mut fake, &mut cranes_part1[(start - 1) as usize]);
+        cranes_part1[(dest - 1) as usize].extend(fake[fake.len() - count as usize..].iter().rev());
+        std::mem::swap(&mut fake, &mut cranes_part1[(start - 1) as usize]);
+        let len = cranes_part1[(start - 1) as usize].len();
+        unsafe { cranes_part1[(start - 1) as usize].set_len(len - count as usize) };
 
-            let item = cranes_part2[(start - 1) as usize]
-                [cranes_part2[(start - 1) as usize].len() - (count - pos) as usize];
-            cranes_part2[(dest - 1) as usize].push_back(item);
-        }
-
-        for _ in 0..count {
-            cranes_part2[(start - 1) as usize].pop_back();
-        }
+        std::mem::swap(&mut fake, &mut cranes_part2[(start - 1) as usize]);
+        cranes_part2[(dest - 1) as usize].extend(fake[fake.len() - count as usize..].iter());
+        std::mem::swap(&mut fake, &mut cranes_part2[(start - 1) as usize]);
+        let len = cranes_part2[(start - 1) as usize].len();
+        unsafe { cranes_part2[(start - 1) as usize].set_len(len - count as usize) };
     }
 
     let part1 = cranes_part1
         .iter()
-        .map(|c| c.back())
+        .map(|c| c.last())
         .collect::<Option<String>>()
         .context("a crane had no contents")?;
 
     let part2 = cranes_part2
         .iter()
-        .map(|c| c.back())
+        .map(|c| c.last())
         .collect::<Option<String>>()
         .context("a crane had no contents")?;
 
