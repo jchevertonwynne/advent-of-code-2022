@@ -1,16 +1,16 @@
 use crate::{DayResult, IntoDayResult};
 use anyhow::Context;
+use bstr::{BStr, ByteSlice};
 use nom::bytes::complete::tag;
 use nom::sequence::{preceded, tuple};
 use nom::IResult;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
-    let mut lines_iter = input.lines();
+    let mut lines_iter = BStr::new(input).lines();
 
     let mut cranes_part1: Vec<Vec<char>> = vec![];
 
     for line in &mut lines_iter {
-        let line = line.as_bytes();
         let f = line[1];
         if f != b' ' && !(b'A'..=b'Z').contains(&f) {
             break;
@@ -30,7 +30,7 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut cranes_part2 = cranes_part1.clone();
 
     for command in lines_iter.skip(1) {
-        let (count, start, dest) = parse_line(command)?.1;
+        let (count, start, dest) = parse_line(unsafe { std::str::from_utf8_unchecked(command) })?.1;
 
         let mut fake = Vec::new();
         std::mem::swap(&mut fake, &mut cranes_part1[(start - 1) as usize]);
