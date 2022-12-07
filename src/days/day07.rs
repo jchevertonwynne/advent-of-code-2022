@@ -1,4 +1,5 @@
 use crate::{DayResult, IntoDayResult};
+use bstr::{BStr, ByteSlice};
 use nom::Slice;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -57,8 +58,6 @@ fn find_smallest_above_size(dir: &RefCell<Entry>, tot_size: usize, best: usize) 
 }
 
 fn load_filesystem(input: &str) -> Rc<RefCell<Entry>> {
-    let lines = input.lines().collect::<Vec<_>>();
-
     let res = Rc::new(RefCell::new(Entry {
         parent: Default::default(),
         size: 0,
@@ -66,13 +65,17 @@ fn load_filesystem(input: &str) -> Rc<RefCell<Entry>> {
     }));
     let mut dir = Rc::clone(&res);
 
-    let mut i = 1;
-    while i < lines.len() {
-        let line = lines[i];
+    let mut is_ls = false;
 
-        if line.starts_with("$ cd") {
-            i += 1;
-            if line.slice(5..) == ".." {
+    for line in BStr::new(input).lines().skip(1) {
+        if is_ls && is_ls_output(line, &dir) {
+            continue;
+        }
+
+        is_ls = false;
+
+        if line.starts_with(b"$ cd") {
+            if line.slice(5..) == b".." {
                 let new_dir = dir.borrow().parent.upgrade().unwrap();
                 dir = new_dir;
                 continue;
@@ -87,34 +90,35 @@ fn load_filesystem(input: &str) -> Rc<RefCell<Entry>> {
             dir.borrow_mut().contents.push(Rc::clone(&new_dir));
 
             dir = new_dir;
-        } else if line.starts_with("$ ls") {
-            i += 1;
-            while i < lines.len() {
-                let line = lines[i];
-                if line.starts_with('$') {
-                    break;
-                }
-
-                i += 1;
-
-                let Some((a, _b)) = line.split_once(' ') else {
-                    break;
-                };
-
-                if a == "dir" {
-                    continue;
-                }
-
-                let Ok(file_size) = a.parse::<usize>() else {
-                    break;
-                };
-
-                dir.borrow_mut().size += file_size;
-            }
+        } else if line.starts_with(b"$ ls") {
+            is_ls = true;
         }
     }
 
     res
+}
+
+#[inline(always)]
+fn is_ls_output(line: &[u8], dir: &RefCell<Entry>) -> bool {
+    if line.starts_with(b"$") {
+        return false;
+    }
+
+    let Some(a) = line.split(|&b| b == b' ').next() else {
+        return false;
+    };
+
+    if a == b"dir" {
+        return true;
+    }
+
+    let Ok(file_size) = unsafe { std::str::from_utf8_unchecked(a) }.parse::<usize>() else {
+        return false;
+    };
+
+    dir.borrow_mut().size += file_size;
+
+    true
 }
 
 #[derive(Debug)]
