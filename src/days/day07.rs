@@ -7,19 +7,19 @@ use std::rc::Rc;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let fs = load_filesystem(input);
-    let (sum, part1) = print_dir_sizes(Rc::clone(&fs));
+    let (sum, part1) = find_dir_sizes(Rc::clone(&fs));
     let part2 = find_dir_to_delete(fs, sum);
     (part1, part2).into_result()
 }
 
-fn print_dir_sizes(dir: Rc<RefCell<Entry>>) -> (usize, usize) {
+fn find_dir_sizes(dir: Rc<RefCell<Entry>>) -> (usize, usize) {
     let mut tot = 0;
     let mut sum = 0;
 
     match dir.borrow().deref() {
         Entry::Directory { contents, .. } => {
             for c in contents.values() {
-                let (t, s) = print_dir_sizes(Rc::clone(c));
+                let (t, s) = find_dir_sizes(Rc::clone(c));
                 tot += t;
                 sum += s;
             }
@@ -45,7 +45,7 @@ fn find_smallest_above_size(dir: Rc<RefCell<Entry>>, tot_size: usize, best: usiz
         return best;
     }
 
-    let (size, _) = print_dir_sizes(Rc::clone(&dir));
+    let (size, _) = find_dir_sizes(Rc::clone(&dir));
 
     let mut best = best;
     let new_size = tot_size - size;
