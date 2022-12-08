@@ -122,10 +122,10 @@ fn is_ls_output(line: &[u8], dir: &RefCell<Entry>) -> bool {
 }
 
 #[derive(Debug)]
-struct Entry<'a> {
-    parent: Weak<RefCell<Entry<'a>>>,
+struct Entry {
+    parent: Weak<RefCell<Entry>>,
     size: usize,
-    contents: Vec<Rc<RefCell<Entry<'a>>>>,
+    contents: Vec<Rc<RefCell<Entry>>>,
 }
 
 #[cfg(test)]

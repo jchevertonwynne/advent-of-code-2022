@@ -44,16 +44,14 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
         }
     }
 
-    let part1 = visible.iter().filter(|b| **b).count();
+    let part1 = visible.into_iter().filter(|b| *b).count();
 
     let mut part2: usize = 0;
 
-    for (col, line) in trees.iter().enumerate() {
-        for (row, &home) in line.iter().enumerate() {
+    for (col, line) in trees.iter().enumerate().skip(1) {
+        for (row, &home) in line.iter().enumerate().skip(1) {
             let mut a = 0;
-            for i in (0..(col)).rev() {
-                let t = trees[i][row];
-
+            for t in trees[..col].iter().map(|r| r[row]).rev() {
                 a += 1;
 
                 if t >= home {
@@ -61,10 +59,12 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
                 }
             }
 
-            let mut b = 0;
-            for i in col + 1..trees.len() {
-                let t = trees[i][row];
+            if a * (trees.len() - col) * (trees[col].len() - row) * row < part2 {
+                continue;
+            }
 
+            let mut b = 0;
+            for t in trees[col + 1..].iter().map(|r| r[row]) {
                 b += 1;
 
                 if t >= home {
@@ -72,10 +72,12 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
                 }
             }
 
-            let mut c = 0;
-            for i in (0..(row)).rev() {
-                let t = trees[col][i];
+            if a * b * (trees[col].len() - row) * row < part2 {
+                continue;
+            }
 
+            let mut c = 0;
+            for &t in trees[col][..row].iter().rev() {
                 c += 1;
 
                 if t >= home {
@@ -83,10 +85,12 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
                 }
             }
 
-            let mut d = 0;
-            for i in row + 1..trees[0].len() {
-                let t = trees[col][i];
+            if a * b * c * (trees[col].len() - row) < part2 {
+                continue;
+            }
 
+            let mut d = 0;
+            for &t in trees[col][row + 1..].iter() {
                 d += 1;
 
                 if t >= home {
