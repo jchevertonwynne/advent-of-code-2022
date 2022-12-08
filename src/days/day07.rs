@@ -1,22 +1,20 @@
 use crate::{DayResult, IntoDayResult};
 use bstr::{BStr, ByteSlice};
 use nom::Slice;
-use std::cell::RefCell;
-use std::rc::{Rc, Weak};
+use crate::days::byte_slice_to_int;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
-    let fs = load_filesystem(input);
-    let (sum, part1) = find_dir_sizes(&fs);
+    let mut fs = load_filesystem(input);
+    let (sum, part1) = find_dir_sizes(&mut fs);
     let part2 = find_dir_to_delete(&fs, sum);
     (part1, part2).into_result()
 }
 
-fn find_dir_sizes(dir: &RefCell<Entry>) -> (usize, usize) {
-    let mut dir = dir.borrow_mut();
-
+fn find_dir_sizes(dir: &mut Entry) -> (usize, usize) {
     let mut total = dir.size;
     let mut small_sum = 0;
-    for child in &dir.contents {
+
+    for child in &mut dir.contents {
         let (sub_total, sub_small_sum) = find_dir_sizes(child);
         total += sub_total;
         small_sum += sub_small_sum;
@@ -31,14 +29,12 @@ fn find_dir_sizes(dir: &RefCell<Entry>) -> (usize, usize) {
     (total, small_sum)
 }
 
-fn find_dir_to_delete(dir: &RefCell<Entry>, sum: usize) -> usize {
+fn find_dir_to_delete(dir: &Entry, sum: usize) -> usize {
     find_smallest_above_size(dir, sum, usize::MAX)
 }
 
-fn find_smallest_above_size(dir: &RefCell<Entry>, tot_size: usize, best: usize) -> usize {
-    let entry = dir.borrow();
-
-    let size = entry.size;
+fn find_smallest_above_size(dir: &Entry, tot_size: usize, best: usize) -> usize {
+    let size = dir.size;
     let mut best = best;
     let new_size = tot_size - size;
 
@@ -50,82 +46,65 @@ fn find_smallest_above_size(dir: &RefCell<Entry>, tot_size: usize, best: usize) 
         best = size;
     }
 
-    for child in &entry.contents {
+    for child in &dir.contents {
         best = find_smallest_above_size(child, tot_size, best);
     }
 
     best
 }
 
-fn load_filesystem(input: &str) -> Rc<RefCell<Entry>> {
-    let res = Rc::new(RefCell::new(Entry {
-        parent: Default::default(),
-        size: 0,
-        contents: Vec::new(),
-    }));
-    let mut dir = Rc::clone(&res);
+fn load_filesystem(input: &str) -> Entry {
+    let mut lines = BStr::new(input).lines();
+
+    load_inner(&mut lines)
+}
+
+fn load_inner<'a, I: Iterator<Item=&'a [u8]>>(lines: &mut I) -> Entry {
+    let mut cur_dir = Entry::default();
 
     let mut is_ls = false;
-
-    for line in BStr::new(input).lines().skip(1) {
-        if is_ls && is_ls_output(line, &dir) {
+    while let Some(line) = lines.next() {
+        if is_ls && is_ls_output(line, &mut cur_dir) {
             continue;
         }
 
-        is_ls = false;
-
         if line.starts_with(b"$ cd") {
             if line.slice(5..) == b".." {
-                let new_dir = dir.borrow().parent.upgrade().unwrap();
-                dir = new_dir;
-                continue;
+                return cur_dir;
             }
 
-            let new_dir = Rc::new(RefCell::new(Entry {
-                parent: Rc::downgrade(&dir),
-                size: 0,
-                contents: Vec::new(),
-            }));
-
-            dir.borrow_mut().contents.push(Rc::clone(&new_dir));
-
-            dir = new_dir;
+            cur_dir.contents.push(load_inner(lines));
         } else if line.starts_with(b"$ ls") {
             is_ls = true;
         }
     }
 
-    res
+    cur_dir
 }
 
 #[inline(always)]
-fn is_ls_output(line: &[u8], dir: &RefCell<Entry>) -> bool {
+fn is_ls_output(line: &[u8], dir: &mut Entry) -> bool {
     if line.starts_with(b"$") {
         return false;
+    }
+
+    if line.starts_with(b"dir") {
+        return true;
     }
 
     let Some(a) = line.split(|&b| b == b' ').next() else {
         return false;
     };
 
-    if a == b"dir" {
-        return true;
-    }
-
-    let Ok(file_size) = unsafe { std::str::from_utf8_unchecked(a) }.parse::<usize>() else {
-        return false;
-    };
-
-    dir.borrow_mut().size += file_size;
+    dir.size += byte_slice_to_int::<usize>(a);
 
     true
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Entry {
-    parent: Weak<RefCell<Entry>>,
     size: usize,
-    contents: Vec<Rc<RefCell<Entry>>>,
+    contents: Vec<Entry>,
 }
 
 #[cfg(test)]
