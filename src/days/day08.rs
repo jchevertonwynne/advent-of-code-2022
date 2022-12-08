@@ -46,17 +46,59 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
 
     let part1 = visible.iter().filter(|b| **b).count();
 
-    for (col, line) in trees.iter().enumerate().skip(1) {
-        for (row, &char) in line.iter().enumerate().skip(1) {
-            let mut smallest: u8 = 0;
+    let mut part2: usize = 0;
+
+    for (col, line) in trees.iter().enumerate() {
+        for (row, &home) in line.iter().enumerate() {
             let mut a = 0;
             for i in (0..(col)).rev() {
-                if
+                let t = trees[i][row];
+
+                a += 1;
+
+                if t >= home {
+                    break;
+                }
             }
+
+            let mut b = 0;
+            for i in col + 1..trees.len() {
+                let t = trees[i][row];
+
+                b += 1;
+
+                if t >= home {
+                    break;
+                }
+            }
+
+            let mut c = 0;
+            for i in (0..(row)).rev() {
+                let t = trees[col][i];
+
+                c += 1;
+
+                if t >= home {
+                    break;
+                }
+            }
+
+            let mut d = 0;
+            for i in row + 1..trees[0].len() {
+                let t = trees[col][i];
+
+                d += 1;
+
+                if t >= home {
+                    break;
+                }
+            }
+
+            part2 = std::cmp::max(part2, a * b * c * d);
         }
     }
 
-    part1.into_result()
+    (part1, part2).into_result()
 }
 
 #[cfg(test)]
@@ -70,8 +112,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(21.into()),
+                part2: Some(8.into()),
             }
         );
     }
@@ -82,8 +124,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(1669.into()),
+                part2: Some(331344.into()),
             }
         );
     }
