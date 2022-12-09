@@ -1,7 +1,7 @@
+use crate::days::byte_slice_to_int;
 use crate::{DayResult, IntoDayResult};
 use bstr::{BStr, ByteSlice};
 use nom::Slice;
-use crate::days::byte_slice_to_int;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut fs = load_filesystem(input);
@@ -59,7 +59,7 @@ fn load_filesystem(input: &str) -> Entry {
     load_inner(&mut lines)
 }
 
-fn load_inner<'a, I: Iterator<Item=&'a [u8]>>(lines: &mut I) -> Entry {
+fn load_inner<'a, I: Iterator<Item = &'a [u8]>>(lines: &mut I) -> Entry {
     let mut cur_dir = Entry::default();
 
     let mut is_ls = false;
