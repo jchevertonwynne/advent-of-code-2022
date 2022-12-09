@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.66"
 bstr = "1.0.1"
+fxhash = "0.2.1"
 nom = "7.1.1"
 nonmax = "0.5.3"
 num = "0.4.0"

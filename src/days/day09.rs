@@ -1,19 +1,16 @@
 use std::collections::HashSet;
+use bstr::{BStr, ByteSlice};
+use fxhash::FxBuildHasher;
 use crate::{DayResult, IntoDayResult};
+use crate::days::byte_slice_to_int;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
-    let part1 = simulate_ropes2::<2>(input)?;
-    let part2 = simulate_ropes2::<10>(input)?;
-    (part1, part2).into_result()
-}
-
-fn simulate_ropes2<const N: usize>(input: &str) -> anyhow::Result<usize> {
-    let mut visited = HashSet::new();
-    let mut ropes = [Point{x: 0, y: 0}; N];
-    for line in input.lines() {
-        let (dir, dist) = line.split_at(2);
-        let dir = dir.as_bytes()[0];
-        let dist = dist.parse::<isize>()?;
+    let mut visited_1 = HashSet::with_hasher(FxBuildHasher::default());
+    let mut visited_2 = HashSet::with_hasher(FxBuildHasher::default());
+    let mut ropes = [Point::default(); 10];
+    for line in BStr::new(input).lines() {
+        let dir = line[0];
+        let dist = byte_slice_to_int::<isize>(&line[2..]);
 
         for _ in 0..dist {
             let (dx, dy) = match dir {
@@ -27,27 +24,31 @@ fn simulate_ropes2<const N: usize>(input: &str) -> anyhow::Result<usize> {
             ropes[0].y += dy;
 
             for i in 0..ropes.len() - 1 {
-                if (ropes[i].x - ropes[i + 1].x).abs() > 1 {
-                    ropes[i + 1].x += if ropes[i].x - ropes[i + 1].x > 0 { 1 } else { -1 };
-                    if ropes[i].y != ropes[i + 1].y {
-                        ropes[i + 1].y = ropes[i].y;
+                let first = ropes[i];
+                let mut second = &mut ropes[i + 1];
+                if (first.x - second.x).abs() > 1 {
+                    second.x += if first.x - second.x > 0 { 1 } else { -1 };
+                    if first.y != second.y {
+                        second.y += if first.y - second.y > 0 { 1 } else { -1 };
                     }
                 }
-                if (ropes[i].y - ropes[i + 1].y).abs() > 1 {
-                    ropes[i + 1].y += if ropes[i].y - ropes[i + 1].y > 0 { 1 } else { -1 };
-                    if ropes[i].x != ropes[i + 1].x {
-                        ropes[i + 1].x = ropes[i].x;
+                if (first.y - second.y).abs() > 1 {
+                    second.y += if first.y - second.y > 0 { 1 } else { -1 };
+                    if first.x != second.x {
+                        second.x += if first.x - second.x > 0 { 1 } else { -1 };
                     }
                 }
             }
 
-            visited.insert(ropes[N - 1]);
+            visited_1.insert(ropes[1]);
+            visited_2.insert(ropes[9]);
         }
     }
-    Ok(visited.len())
+
+    (visited_1.len(), visited_2.len()).into_result()
 }
 
-#[derive(Hash, Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Hash, Eq, PartialEq, Copy, Clone, Debug, Default)]
 struct Point {
     x: isize,
     y: isize,
@@ -64,8 +65,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(88.into()),
+                part2: Some(36.into()),
             }
         );
     }
@@ -76,8 +77,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(6044.into()),
+                part2: Some(2384.into()),
             }
         );
     }
