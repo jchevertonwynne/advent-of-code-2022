@@ -1,8 +1,8 @@
-use std::collections::HashSet;
+use crate::days::byte_slice_to_int;
+use crate::{DayResult, IntoDayResult};
 use bstr::{BStr, ByteSlice};
 use fxhash::FxBuildHasher;
-use crate::{DayResult, IntoDayResult};
-use crate::days::byte_slice_to_int;
+use std::collections::HashSet;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut visited_1 = HashSet::with_hasher(FxBuildHasher::default());
@@ -27,16 +27,13 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
                 let first = ropes[i];
                 let mut second = &mut ropes[i + 1];
                 if (first.x - second.x).abs() > 1 {
-                    second.x += if first.x - second.x > 0 { 1 } else { -1 };
-                    if first.y != second.y {
-                        second.y += if first.y - second.y > 0 { 1 } else { -1 };
-                    }
+                    second.x += (first.x - second.x).signum();
+                    second.y += (first.y - second.y).signum();
                 }
+
                 if (first.y - second.y).abs() > 1 {
-                    second.y += if first.y - second.y > 0 { 1 } else { -1 };
-                    if first.x != second.x {
-                        second.x += if first.x - second.x > 0 { 1 } else { -1 };
-                    }
+                    second.x += (first.x - second.x).signum();
+                    second.y += (first.y - second.y).signum();
                 }
             }
 
@@ -56,6 +53,7 @@ struct Point {
 
 #[cfg(test)]
 mod tests {
+    use std::assert_eq;
     use super::run;
     use crate::DayResult;
 

@@ -1,6 +1,6 @@
 pub mod days;
 
-use std::fmt::Display;
+use std::fmt::{Display, Formatter};
 use std::time::Instant;
 
 use nom::combinator::opt;
@@ -72,7 +72,21 @@ impl_answer_enum! {
     (I64, i64),
     (I32, i32),
     (I16, i16),
-    (I8, i8)
+    (I8, i8),
+    (Day10Result, Day10Result)
+}
+
+#[derive(Debug)]
+pub struct Day10Result([u64; 6]);
+
+impl Display for Day10Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for line in self.0 {
+            let s: String = (0..40).map(|i| if (1 << i) & line != 0 { '#' } else { ' ' } ).collect();
+            writeln!(f, "{}", s)?
+        }
+        Ok(())
+    }
 }
 
 impl From<&'_ str> for Answers {
@@ -147,12 +161,18 @@ pub fn run_day(
 
     if let Some(part1) = answer.part1 {
         println!("part 1:");
-        println!("\t{}", part1);
+        let part1 = format!("{part1}");
+        for line in part1.lines() {
+            println!("\t{line}");
+        }
     }
 
     if let Some(part2) = answer.part2 {
         println!("part 2:");
-        println!("\t{}", part2);
+        let part2 = format!("{part2}");
+        for line in part2.lines() {
+            println!("\t{line}");
+        }
     }
 
     println!("Duration:");
