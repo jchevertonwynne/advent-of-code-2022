@@ -5,60 +5,29 @@ use std::collections::VecDeque;
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let monkeys = load_monkeys(input)?;
 
-    (part_1(monkeys.clone()), part_2(monkeys)).into_result()
+    let part1 = runner(monkeys.clone(), 20, true, 0);
+    let part2 = runner(
+        monkeys.clone(),
+        10000,
+        false,
+        monkeys.iter().map(|m| m.div).product(),
+    );
+
+    (part1, part2).into_result()
 }
 
-fn part_1(mut monkeys: Vec<Monkey>) -> usize {
-    for _ in 0..20 {
-        for c in 0..monkeys.len() {
-            let mut monkey = Monkey {
-                items: VecDeque::new(),
-                op: Op::Mul(Val::Old),
-                div: 0,
-                if_true: 0,
-                if_false: 0,
-                inspections: 0,
-            };
-            std::mem::swap(&mut monkey, &mut monkeys[c]);
-
-            for &item in &monkey.items {
-                let new_score = monkey.op.apply(item) / 3;
-                if new_score % monkey.div == 0 {
-                    monkeys[monkey.if_true].items.push_back(new_score);
-                } else {
-                    monkeys[monkey.if_false].items.push_back(new_score);
-                }
-            }
-            monkey.inspections += monkey.items.len();
-            monkey.items.clear();
-
-            std::mem::swap(&mut monkey, &mut monkeys[c]);
-        }
-    }
-
-    let mut highest = [0; 2];
-    for monkey in monkeys {
-        let ins = monkey.inspections;
-        if ins > highest[0] {
-            highest[1] = highest[0];
-            highest[0] = ins;
-        } else if ins > highest[1] {
-            highest[1] = ins;
-        }
-    }
-
-    highest[0] * highest[1]
-}
-
-fn part_2(mut monkeys: Vec<Monkey>) -> usize {
-    let modulus = monkeys.iter().map(|m| m.div).product::<usize>();
-    for _ in 0..10000 {
-        for c in 0..monkeys.len() {
+fn runner(mut monkeys: Vec<Monkey>, rounds: usize, part1: bool, modulo: usize) -> usize {
+    for _ in 0..rounds {
+        for m in 0..monkeys.len() {
             let mut monkey = Monkey::default();
-            std::mem::swap(&mut monkey, &mut monkeys[c]);
+            std::mem::swap(&mut monkey, &mut monkeys[m]);
 
             for &item in &monkey.items {
-                let new_score = monkey.op.apply(item) % modulus;
+                let new_score = if part1 {
+                    monkey.op.apply(item) / 3
+                } else {
+                    monkey.op.apply(item) % modulo
+                };
                 if new_score % monkey.div == 0 {
                     monkeys[monkey.if_true].items.push_back(new_score);
                 } else {
@@ -68,7 +37,7 @@ fn part_2(mut monkeys: Vec<Monkey>) -> usize {
             monkey.inspections += monkey.items.len();
             monkey.items.clear();
 
-            std::mem::swap(&mut monkey, &mut monkeys[c]);
+            std::mem::swap(&mut monkey, &mut monkeys[m]);
         }
     }
 
@@ -142,7 +111,7 @@ struct Monkey {
 
 impl Default for Monkey {
     fn default() -> Self {
-        Monkey{
+        Monkey {
             items: VecDeque::new(),
             op: Op::Mul(Val::Old),
             div: 0,
