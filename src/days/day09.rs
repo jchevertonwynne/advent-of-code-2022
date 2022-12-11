@@ -1,12 +1,16 @@
 use crate::days::byte_slice_to_int;
 use crate::{DayResult, IntoDayResult};
 use bstr::{BStr, ByteSlice};
-use fxhash::FxBuildHasher;
-use std::collections::HashSet;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
-    let mut visited_1 = HashSet::with_hasher(FxBuildHasher::default());
-    let mut visited_2 = HashSet::with_hasher(FxBuildHasher::default());
+    const X: usize = 332;
+    const X_OFF: isize = 50;
+    const Y: usize = 450;
+    const Y_OFF: isize = 50;
+    let mut part1 = 0;
+    let mut part2 = 0;
+    let mut seen_1 = [0; X * Y];
+    let mut seen_2 = [0; X * Y];
     let mut ropes = [Point::default(); 10];
     for line in BStr::new(input).lines() {
         let dir = line[0];
@@ -37,12 +41,18 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
                 }
             }
 
-            visited_1.insert(ropes[1]);
-            visited_2.insert(ropes[9]);
+            if seen_1[(ropes[1].x + X_OFF) as usize * X + (ropes[1].y + Y_OFF) as usize] == 0 {
+                part1 += 1;
+            }
+            seen_1[(ropes[1].x + X_OFF) as usize * X + (ropes[1].y + Y_OFF) as usize] += 1;
+            if seen_2[(ropes[9].x + X_OFF) as usize * X + (ropes[9].y + Y_OFF) as usize] == 0 {
+                part2 += 1;
+            }
+            seen_2[(ropes[9].x + X_OFF) as usize * X + (ropes[9].y + Y_OFF) as usize] += 1;
         }
     }
 
-    (visited_1.len(), visited_2.len()).into_result()
+    (part1, part2).into_result()
 }
 
 #[derive(Hash, Eq, PartialEq, Copy, Clone, Debug, Default)]

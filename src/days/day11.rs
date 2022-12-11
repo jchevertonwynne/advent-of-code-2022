@@ -1,41 +1,30 @@
 use crate::{DayResult, IntoDayResult};
 use anyhow::Context;
-use std::collections::VecDeque;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let monkeys = load_monkeys(input)?;
 
-    let part1 = runner(monkeys.clone(), 20, true, 0);
-    let part2 = runner(
-        monkeys.clone(),
-        10000,
-        false,
-        monkeys.iter().map(|m| m.div).product(),
-    );
+    let part1 = play_game::<true>(monkeys.clone(), 20, 0);
+    let modulo = monkeys.iter().map(|m| m.div).product();
+    let part2 = play_game::<false>(monkeys, 10000, modulo);
 
     (part1, part2).into_result()
 }
 
-fn runner(mut monkeys: Vec<Monkey>, rounds: usize, part1: bool, modulo: usize) -> usize {
+fn play_game<const PART1: bool>(mut monkeys: Vec<Monkey>, rounds: usize, modulo: usize) -> usize {
+    let mut monkey: Monkey = Monkey::default();
     for _ in 0..rounds {
         for m in 0..monkeys.len() {
-            let mut monkey = Monkey::default();
             std::mem::swap(&mut monkey, &mut monkeys[m]);
 
-            for &item in &monkey.items {
-                let new_score = if part1 {
-                    monkey.op.apply(item) / 3
-                } else {
-                    monkey.op.apply(item) % modulo
-                };
-                if new_score % monkey.div == 0 {
-                    monkeys[monkey.if_true].items.push_back(new_score);
-                } else {
-                    monkeys[monkey.if_false].items.push_back(new_score);
-                }
-            }
             monkey.inspections += monkey.items.len();
-            monkey.items.clear();
+            for item in monkey.items.drain(..) {
+                let val = monkey.op.apply(item);
+                let new_score = if PART1 { val / 3 } else { val % modulo };
+                monkeys[monkey.indices[(new_score % monkey.div == 0) as usize]]
+                    .items
+                    .push(new_score);
+            }
 
             std::mem::swap(&mut monkey, &mut monkeys[m]);
         }
@@ -86,12 +75,15 @@ fn load_monkeys(input: &str) -> anyhow::Result<Vec<Monkey>> {
         let div = unsafe { std::str::from_utf8_unchecked(&div_line[21..]) }.parse()?;
         let if_true_line = lines.next().context("no next line found")?.as_bytes();
         let if_false_line = lines.next().context("no next line found")?.as_bytes();
+        let indices = [
+            (if_false_line[30] - b'0') as usize,
+            (if_true_line[29] - b'0') as usize,
+        ];
         monkeys.push(Monkey {
             items,
             op,
             div,
-            if_true: (if_true_line[29] - b'0') as usize,
-            if_false: (if_false_line[30] - b'0') as usize,
+            indices,
             inspections: 0,
         });
     }
@@ -101,22 +93,20 @@ fn load_monkeys(input: &str) -> anyhow::Result<Vec<Monkey>> {
 
 #[derive(Debug, Clone)]
 struct Monkey {
-    items: VecDeque<usize>,
+    items: Vec<usize>,
     op: Op,
     div: usize,
-    if_true: usize,
-    if_false: usize,
+    indices: [usize; 2],
     inspections: usize,
 }
 
 impl Default for Monkey {
     fn default() -> Self {
         Monkey {
-            items: VecDeque::new(),
+            items: Vec::new(),
             op: Op::Mul(Val::Old),
             div: 0,
-            if_true: 0,
-            if_false: 0,
+            indices: [0; 2],
             inspections: 0,
         }
     }
