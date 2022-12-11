@@ -26,12 +26,15 @@ fn bench_days(c: &mut Criterion) {
     // c.bench_function("day 08", |b| {
     //     b.iter(|| day08::run(black_box(include_str!("../input/real/08.txt"))))
     // });
-    c.bench_function("day 09", |b| {
-        b.iter(|| day09::run(black_box(include_str!("../input/real/09.txt"))))
-    });
+    // c.bench_function("day 09", |b| {
+    //     b.iter(|| day09::run(black_box(include_str!("../input/real/09.txt"))))
+    // });
     // c.bench_function("day 10", |b| {
     //     b.iter(|| day10::run(black_box(include_str!("../input/real/10.txt"))))
     // });
+    c.bench_function("day 11", |b| {
+        b.iter(|| day11::run(black_box(include_str!("../input/real/11.txt"))))
+    });
 }
 
 criterion_group!(benches, bench_days);

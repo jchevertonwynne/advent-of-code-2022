@@ -82,7 +82,9 @@ pub struct Day10Result([u64; 6]);
 impl Display for Day10Result {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for line in self.0 {
-            let s: String = (0..40).map(|i| if (1 << i) & line != 0 { '#' } else { ' ' } ).collect();
+            let s: String = (0..40)
+                .map(|i| if (1 << i) & line != 0 { '#' } else { ' ' })
+                .collect();
             writeln!(f, "{}", s)?
         }
         Ok(())

@@ -12,6 +12,7 @@ fxhash = "0.2.1"
 nom = "7.1.1"
 nonmax = "0.5.3"
 num = "0.4.0"
+num-bigint = "0.4.3"
 regex = "1.7.0"
 thiserror = "1.0.37"
 

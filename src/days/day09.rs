@@ -53,9 +53,9 @@ struct Point {
 
 #[cfg(test)]
 mod tests {
-    use std::assert_eq;
     use super::run;
     use crate::DayResult;
+    use std::assert_eq;
 
     #[test]
     fn test_example_answers() {
