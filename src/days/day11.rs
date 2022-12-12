@@ -1,5 +1,6 @@
 use crate::{DayResult, IntoDayResult};
 use anyhow::Context;
+use std::rc::Rc;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let monkeys = load_monkeys(input)?;
@@ -19,7 +20,7 @@ fn play_game<const PART1: bool>(mut monkeys: Vec<Monkey>, rounds: usize, modulo:
 
             monkey.inspections += monkey.items.len();
             for item in monkey.items.drain(..) {
-                let val = monkey.op.apply(item);
+                let val = (monkey.op)(item);
                 let new_score = if PART1 { val / 3 } else { val % modulo };
                 monkeys[monkey.indices[(new_score % monkey.div == 0) as usize]]
                     .items
@@ -56,20 +57,19 @@ fn load_monkeys(input: &str) -> anyhow::Result<Vec<Monkey>> {
             .map(|n| n.parse())
             .collect::<Result<_, _>>()?;
         let op_line = lines.next().context("no next line found")?.as_bytes();
-        let op = if op_line[23] == b'+' {
+        let op: Rc<dyn Fn(usize) -> usize> = if op_line[23] == b'+' {
             if op_line[25] == b'o' {
-                Op::Add(Val::Old)
+                Rc::new(|val| val + val)
             } else {
-                Op::Add(Val::Const(
-                    unsafe { std::str::from_utf8_unchecked(&op_line[25..]) }.parse()?,
-                ))
+                let int =
+                    unsafe { std::str::from_utf8_unchecked(&op_line[25..]) }.parse::<usize>()?;
+                Rc::new(move |val| val + int)
             }
         } else if op_line[25] == b'o' {
-            Op::Mul(Val::Old)
+            Rc::new(|val| val * val)
         } else {
-            Op::Mul(Val::Const(
-                unsafe { std::str::from_utf8_unchecked(&op_line[25..]) }.parse()?,
-            ))
+            let int = unsafe { std::str::from_utf8_unchecked(&op_line[25..]) }.parse::<usize>()?;
+            Rc::new(move |val| val * int)
         };
         let div_line = lines.next().context("no next line found")?.as_bytes();
         let div = unsafe { std::str::from_utf8_unchecked(&div_line[21..]) }.parse()?;
@@ -91,10 +91,10 @@ fn load_monkeys(input: &str) -> anyhow::Result<Vec<Monkey>> {
     Ok(monkeys)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 struct Monkey {
     items: Vec<usize>,
-    op: Op,
+    op: Rc<dyn Fn(usize) -> usize>,
     div: usize,
     indices: [usize; 2],
     inspections: usize,
@@ -104,40 +104,10 @@ impl Default for Monkey {
     fn default() -> Self {
         Monkey {
             items: Vec::new(),
-            op: Op::Mul(Val::Old),
+            op: Rc::new(|a| a + a),
             div: 0,
             indices: [0; 2],
             inspections: 0,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-enum Op {
-    Add(Val),
-    Mul(Val),
-}
-
-impl Op {
-    fn apply(&self, val: usize) -> usize {
-        match self {
-            Op::Add(op_val) => val + op_val.val(val),
-            Op::Mul(op_val) => val * op_val.val(val),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-enum Val {
-    Old,
-    Const(usize),
-}
-
-impl Val {
-    fn val(&self, old: usize) -> usize {
-        match self {
-            Val::Old => old,
-            Val::Const(c) => *c,
         }
     }
 }
