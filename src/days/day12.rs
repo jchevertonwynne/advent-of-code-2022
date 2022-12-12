@@ -1,38 +1,54 @@
 use crate::{DayResult, IntoDayResult};
 use anyhow::Context;
 use arrayvec::ArrayVec;
-use bstr::{BStr, ByteSlice};
 use fxhash::FxBuildHasher;
 use std::collections::{HashSet, VecDeque};
+use std::hash::{BuildHasher, Hash};
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
-    let world = BStr::new(input).lines().collect::<Vec<_>>();
+    let mut seen = HashSet::with_hasher(FxBuildHasher::default());
+    let mut queue = VecDeque::new();
 
-    let p1_start = world
+    let input = input.as_bytes();
+    let line_length = input
         .iter()
-        .enumerate()
-        .flat_map(|(y, row)| row.iter().enumerate().map(move |(x, &b)| (x, y, b)))
-        .find(|&(_, _, b)| b == b'S')
-        .map(|(x, y, _)| Point { x, y })
-        .context("failed to find start")?;
+        .position(|&b| b == b'\n')
+        .context("expected a newline")?
+        + 1;
 
-    (part_1([p1_start], &world), part_2(&world)).into_result()
+    let p1_start = input
+        .iter()
+        .position(|&b| b == b'S')
+        .map(|ind| Point {
+            x: ind % line_length,
+            y: ind / line_length,
+        })
+        .context("failed to find the start")?;
+
+    (
+        part_1([p1_start], input, line_length, &mut seen, &mut queue),
+        part_2(input, line_length, &mut seen, &mut queue),
+    )
+        .into_result()
 }
 
-fn part_1(start: impl IntoIterator<Item = Point>, world: &[&[u8]]) -> usize {
-    let mut seen = HashSet::with_hasher(FxBuildHasher::default());
-
-    let mut queue = VecDeque::new();
-    for start in start {
-        queue.push_front((start, 0));
-    }
+fn part_1(
+    start: impl IntoIterator<Item = Point>,
+    input: &[u8],
+    line_length: usize,
+    seen: &mut HashSet<Point, impl BuildHasher>,
+    queue: &mut VecDeque<(Point, usize)>,
+) -> usize {
+    seen.clear();
+    queue.clear();
+    queue.extend(start.into_iter().map(|p| (p, 0)));
 
     while let Some((state, turns)) = queue.pop_front() {
         if !seen.insert(state) {
             continue;
         }
 
-        if let Some(neighbours) = get_next(state, world) {
+        if let Some(neighbours) = get_next(state, input, line_length) {
             for neighbour in neighbours {
                 queue.push_back((neighbour, turns + 1));
             }
@@ -44,32 +60,35 @@ fn part_1(start: impl IntoIterator<Item = Point>, world: &[&[u8]]) -> usize {
     unreachable!();
 }
 
-fn part_2(world: &[&[u8]]) -> usize {
-    let starts = world
-        .iter()
-        .enumerate()
-        .flat_map(|(y, line)| line.iter().enumerate().map(move |(x, &val)| (x, y, val)))
-        .filter_map(|(x, y, val)| {
-            if val == b'a' {
-                Some(Point { x, y })
-            } else {
-                None
-            }
-        });
+fn part_2(
+    input: &[u8],
+    line_length: usize,
+    seen: &mut HashSet<Point, impl BuildHasher>,
+    queue: &mut VecDeque<(Point, usize)>,
+) -> usize {
+    let starts = input.iter().enumerate().filter_map(|(i, &b)| {
+        if b == b'a' {
+            let x = i % line_length;
+            let y = i / line_length;
+            Some(Point { x, y })
+        } else {
+            None
+        }
+    });
 
-    part_1(starts, world)
+    part_1(starts, input, line_length, seen, queue)
 }
 
-fn get_next(curr: Point, world: &[&[u8]]) -> Option<ArrayVec<Point, 4>> {
+fn get_next(curr: Point, input: &[u8], line_length: usize) -> Option<ArrayVec<Point, 4>> {
     let mut result = ArrayVec::new();
 
-    let mut val = world[curr.y][curr.x];
+    let mut val = input[curr.y * line_length + curr.x];
     if val == b'S' {
         val = b'a';
     }
 
     if curr.x > 0 {
-        let a = world[curr.y][curr.x - 1];
+        let a = input[curr.y * line_length + curr.x - 1];
         if a == b'E' && val >= b'y' {
             return None;
         }
@@ -81,8 +100,8 @@ fn get_next(curr: Point, world: &[&[u8]]) -> Option<ArrayVec<Point, 4>> {
         }
     }
 
-    if curr.x + 1 < world[0].len() {
-        let a = world[curr.y][curr.x + 1];
+    if curr.x + 1 < line_length {
+        let a = input[curr.y * line_length + curr.x + 1];
         if a == b'E' && val >= b'y' {
             return None;
         }
@@ -95,7 +114,7 @@ fn get_next(curr: Point, world: &[&[u8]]) -> Option<ArrayVec<Point, 4>> {
     }
 
     if curr.y > 0 {
-        let a = world[curr.y - 1][curr.x];
+        let a = input[(curr.y - 1) * line_length + curr.x];
         if a == b'E' && val >= b'y' {
             return None;
         }
@@ -107,8 +126,8 @@ fn get_next(curr: Point, world: &[&[u8]]) -> Option<ArrayVec<Point, 4>> {
         }
     }
 
-    if curr.y + 1 < world.len() {
-        let a = world[curr.y + 1][curr.x];
+    if curr.y + 1 < input.len() / line_length {
+        let a = input[(curr.y + 1) * line_length + curr.x];
         if a == b'E' && val >= b'y' {
             return None;
         }
@@ -140,8 +159,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(31.into()),
+                part2: Some(29.into()),
             }
         );
     }
@@ -152,8 +171,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(408.into()),
+                part2: Some(399.into()),
             }
         );
     }
