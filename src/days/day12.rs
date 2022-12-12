@@ -2,12 +2,13 @@ use crate::{DayResult, IntoDayResult};
 use anyhow::Context;
 use arrayvec::ArrayVec;
 use fxhash::FxBuildHasher;
-use std::collections::{HashSet, VecDeque};
+use std::cmp::{Ordering, Reverse};
+use std::collections::{BinaryHeap, HashSet};
 use std::hash::{BuildHasher, Hash};
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut seen = HashSet::with_hasher(FxBuildHasher::default());
-    let mut queue = VecDeque::new();
+    let mut queue = BinaryHeap::new();
 
     let input = input.as_bytes();
     let line_length = input
@@ -25,35 +26,74 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
         })
         .context("failed to find the start")?;
 
+    let end = input
+        .iter()
+        .position(|&b| b == b'E')
+        .map(|ind| Point {
+            x: ind % line_length,
+            y: ind / line_length,
+        })
+        .context("failed to find the start")?;
+
     (
-        part_1([p1_start], input, line_length, &mut seen, &mut queue),
-        part_2(input, line_length, &mut seen, &mut queue),
+        part_1([p1_start], end, input, line_length, &mut seen, &mut queue),
+        part_2(input, end, line_length, &mut seen, &mut queue),
     )
         .into_result()
 }
 
+#[derive(Eq, PartialEq)]
+struct Entry {
+    state: Point,
+    dist: usize,
+    est: usize,
+}
+
+impl Ord for Entry {
+    fn cmp(&self, other: &Self) -> Ordering {
+        (self.dist + self.est).cmp(&(other.dist + other.est))
+    }
+}
+
+impl PartialOrd for Entry {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 fn part_1(
     start: impl IntoIterator<Item = Point>,
+    end: Point,
     input: &[u8],
     line_length: usize,
     seen: &mut HashSet<Point, impl BuildHasher>,
-    queue: &mut VecDeque<(Point, usize)>,
+    queue: &mut BinaryHeap<Reverse<Entry>>,
 ) -> usize {
     seen.clear();
     queue.clear();
-    queue.extend(start.into_iter().map(|p| (p, 0)));
+    for item in start {
+        queue.push(Reverse(Entry {
+            state: item,
+            dist: 0,
+            est: item.dist(end),
+        }));
+    }
 
-    while let Some((state, turns)) = queue.pop_front() {
+    while let Some(Reverse(Entry { state, dist, .. })) = queue.pop() {
         if !seen.insert(state) {
             continue;
         }
 
         if let Some(neighbours) = get_next(state, input, line_length) {
             for neighbour in neighbours {
-                queue.push_back((neighbour, turns + 1));
+                queue.push(Reverse(Entry {
+                    state: neighbour,
+                    dist: dist + 1,
+                    est: neighbour.dist(end),
+                }));
             }
         } else {
-            return turns + 1;
+            return dist + 1;
         }
     }
 
@@ -62,9 +102,10 @@ fn part_1(
 
 fn part_2(
     input: &[u8],
+    end: Point,
     line_length: usize,
     seen: &mut HashSet<Point, impl BuildHasher>,
-    queue: &mut VecDeque<(Point, usize)>,
+    queue: &mut BinaryHeap<Reverse<Entry>>,
 ) -> usize {
     let starts = input.iter().enumerate().filter_map(|(i, &b)| {
         if b == b'a' {
@@ -76,7 +117,7 @@ fn part_2(
         }
     });
 
-    part_1(starts, input, line_length, seen, queue)
+    part_1(starts, end, input, line_length, seen, queue)
 }
 
 fn get_next(curr: Point, input: &[u8], line_length: usize) -> Option<ArrayVec<Point, 4>> {
@@ -146,6 +187,12 @@ fn get_next(curr: Point, input: &[u8], line_length: usize) -> Option<ArrayVec<Po
 struct Point {
     x: usize,
     y: usize,
+}
+
+impl Point {
+    fn dist(self, other: Point) -> usize {
+        self.x.abs_diff(other.x) + self.y.abs_diff(other.y)
+    }
 }
 
 #[cfg(test)]
