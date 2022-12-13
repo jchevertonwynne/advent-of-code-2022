@@ -25,17 +25,20 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let div_1 = Packet(vec![Item::Packet(Packet(vec![Item::Value(2)]))]);
     let div_2 = Packet(vec![Item::Packet(Packet(vec![Item::Value(6)]))]);
 
-    let mut all: Vec<_> = inputs
-        .into_iter()
+    let (d1, d2) = inputs
+        .iter()
         .flat_map(|(a, b)| [a, b].into_iter())
-        .collect();
-    all.push(div_1.clone());
-    all.push(div_2.clone());
-    all.sort_unstable();
+        .fold((1, 2), |(mut d1, mut d2), packet| {
+            if packet.cmp(&div_1) == Ordering::Less {
+                d1 += 1
+            };
+            if packet.cmp(&div_2) == Ordering::Less {
+                d2 += 1
+            }
+            (d1, d2)
+        });
 
-    let div_1_index = all.iter().position(|v| v.eq(&div_1)).unwrap();
-    let div_2_index = all.iter().position(|v| v.eq(&div_2)).unwrap();
-    let part2 = (div_1_index + 1) * (div_2_index + 1);
+    let part2 = d1 * d2;
 
     (part1, part2).into_result()
 }
@@ -160,8 +163,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(13.into()),
+                part2: Some(140.into()),
             }
         );
     }
@@ -172,8 +175,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(4894.into()),
+                part2: Some(24180.into()),
             }
         );
     }
