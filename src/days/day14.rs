@@ -1,11 +1,11 @@
-use std::cmp::max;
 use crate::{DayResult, IntoDayResult};
+use bstr::{BStr, ByteSlice};
 use nom::bytes::complete::tag;
 use nom::sequence::{preceded, tuple};
 use nom::IResult;
 use num::Signed;
+use std::cmp::max;
 use std::ops::{Add, AddAssign, Sub};
-use bstr::{BStr, ByteSlice};
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let mut max_y = i32::MIN;
@@ -31,8 +31,8 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let lowest = max_y;
 
     max_y += 5;
-    let min_x = 500 - (max_y  + 5);
-    let max_x = 500 + (max_y  + 5);
+    let min_x = 500 - (max_y + 5);
+    let max_x = 500 + (max_y + 5);
 
     let mut world = World::new(min_x as usize, max_x as usize, 0, max_y as usize);
 

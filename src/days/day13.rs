@@ -4,7 +4,10 @@ use std::fmt::{Debug, Formatter};
 use std::iter::Peekable;
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
-    let inputs: Vec<_> = input
+    let div_1 = Packet(vec![Item::Packet(Packet(vec![Item::Value(2)]))]);
+    let div_2 = Packet(vec![Item::Packet(Packet(vec![Item::Value(6)]))]);
+
+    let (part1, d1, d2) = input
         .split("\n\n")
         .map(|lines| {
             let (a, b) = lines.split_once('\n').unwrap();
@@ -13,34 +16,27 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
                 parse_packet(&mut b.as_bytes().iter().copied().peekable()),
             )
         })
-        .collect();
-
-    let part1: usize = inputs
-        .iter()
         .enumerate()
-        .filter(|(_, (a, b))| a.cmp(b) == Ordering::Less)
-        .map(|(i, _)| i + 1)
-        .sum();
-
-    let div_1 = Packet(vec![Item::Packet(Packet(vec![Item::Value(2)]))]);
-    let div_2 = Packet(vec![Item::Packet(Packet(vec![Item::Value(6)]))]);
-
-    let (d1, d2) = inputs.iter().flat_map(|(a, b)| [a, b].into_iter()).fold(
-        (1, 2),
-        |(mut d1, mut d2), packet| {
-            if packet.cmp(&div_1) == Ordering::Less {
-                d1 += 1
-            };
-            if packet.cmp(&div_2) == Ordering::Less {
-                d2 += 1
+        .fold((0, 1, 2), |(mut part1, mut d1, mut d2), (i, (x, y))| {
+            if x < y {
+                part1 += i + 1;
             }
-            (d1, d2)
-        },
-    );
+            if x < div_1 {
+                d1 += 1;
+            }
+            if y < div_1 {
+                d1 += 1;
+            }
+            if x < div_2 {
+                d2 += 1;
+            }
+            if y < div_2 {
+                d2 += 1;
+            }
+            (part1, d1, d2)
+        });
 
-    let part2 = d1 * d2;
-
-    (part1, part2).into_result()
+    (part1, d1 * d2).into_result()
 }
 
 fn parse_packet<I: Iterator<Item = u8>>(input: &mut Peekable<I>) -> Packet {
