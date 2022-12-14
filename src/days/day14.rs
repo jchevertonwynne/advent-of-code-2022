@@ -1,38 +1,58 @@
+use std::cmp::max;
 use crate::{DayResult, IntoDayResult};
-use anyhow::Context;
-use fxhash::FxBuildHasher;
 use nom::bytes::complete::tag;
 use nom::sequence::{preceded, tuple};
 use nom::IResult;
 use num::Signed;
-use std::collections::HashSet;
 use std::ops::{Add, AddAssign, Sub};
+use bstr::{BStr, ByteSlice};
 
 pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
-    let mut world: HashSet<Point<i32>, _> = HashSet::with_hasher(FxBuildHasher::default());
+    let mut max_y = i32::MIN;
 
-    for line in input.lines() {
-        let (mut rem, start) = parse_coord_pair(line)?;
+    for line in BStr::new(input).lines() {
+        let line = unsafe { std::str::from_utf8_unchecked(line) };
+        let (mut rem, start @ (_, y)) = parse_coord_pair(line)?;
         let mut curr: Point<_> = start.into();
-        world.insert(curr);
+        max_y = max(max_y, y);
 
         while let Ok((_rem, pair)) = parse_subsequent_pair(rem) {
             let next_point: Point<_> = pair.into();
 
             while curr != next_point {
                 curr += next_point.signum(&curr);
-                world.insert(curr);
+                max_y = max(max_y, curr.y);
             }
 
             rem = _rem;
         }
     }
 
-    let lowest = world
-        .iter()
-        .map(|p| p.y)
-        .max()
-        .context("set should be non empty")?;
+    let lowest = max_y;
+
+    max_y += 5;
+    let min_x = 500 - (max_y  + 5);
+    let max_x = 500 + (max_y  + 5);
+
+    let mut world = World::new(min_x as usize, max_x as usize, 0, max_y as usize);
+
+    for line in BStr::new(input).lines() {
+        let line = unsafe { std::str::from_utf8_unchecked(line) };
+        let (mut rem, start) = parse_coord_pair(line)?;
+        let mut curr: Point<_> = start.into();
+        world.mark(curr.x as usize, curr.y as usize);
+
+        while let Ok((_rem, pair)) = parse_subsequent_pair(rem) {
+            let next_point: Point<_> = pair.into();
+
+            while curr != next_point {
+                curr += next_point.signum(&curr);
+                world.mark(curr.x as usize, curr.y as usize);
+            }
+
+            rem = _rem;
+        }
+    }
 
     let mut sand = Point::<i32> { x: 500, y: 0 };
     let mut sand_history = vec![sand];
@@ -51,17 +71,17 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
             x: sand.x + 1,
             y: sand.y + 1,
         };
-        if !world.contains(&pot_down) {
+        if !world.is_marked(pot_down.x as usize, pot_down.y as usize) {
             sand_history.push(sand);
             sand = pot_down;
-        } else if !world.contains(&pot_left) {
+        } else if !world.is_marked(pot_left.x as usize, pot_left.y as usize) {
             sand_history.push(sand);
             sand = pot_left;
-        } else if !world.contains(&pot_right) {
+        } else if !world.is_marked(pot_right.x as usize, pot_right.y as usize) {
             sand_history.push(sand);
             sand = pot_right;
         } else {
-            world.insert(sand);
+            world.mark(sand.x as usize, sand.y as usize);
             part1 += 1;
             if let Some(prev) = sand_history.pop() {
                 sand = prev;
@@ -75,7 +95,7 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     loop {
         if sand.y == lowest + 1 {
             if let Some(prev) = sand_history.pop() {
-                world.insert(sand);
+                world.mark(sand.x as usize, sand.y as usize);
                 part2 += 1;
                 sand = prev;
             } else {
@@ -95,17 +115,17 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
             x: sand.x + 1,
             y: sand.y + 1,
         };
-        if !world.contains(&pot_down) {
+        if !world.is_marked(pot_down.x as usize, pot_down.y as usize) {
             sand_history.push(sand);
             sand = pot_down;
-        } else if !world.contains(&pot_left) {
+        } else if !world.is_marked(pot_left.x as usize, pot_left.y as usize) {
             sand_history.push(sand);
             sand = pot_left;
-        } else if !world.contains(&pot_right) {
+        } else if !world.is_marked(pot_right.x as usize, pot_right.y as usize) {
             sand_history.push(sand);
             sand = pot_right;
         } else if let Some(prev) = sand_history.pop() {
-            world.insert(sand);
+            world.mark(sand.x as usize, sand.y as usize);
             part2 += 1;
             sand = prev;
         } else {
@@ -114,6 +134,36 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     }
 
     (part1, part2).into_result()
+}
+
+struct World {
+    contents: Vec<bool>,
+    x_min: usize,
+    x_range: usize,
+}
+
+impl World {
+    fn new(x_min: usize, x_max: usize, y_min: usize, y_max: usize) -> World {
+        let x_range = x_max - x_min + 1;
+        let y_range = y_max - y_min + 1;
+        let contents = vec![false; x_range * y_range];
+
+        World {
+            contents,
+            x_min,
+            x_range,
+        }
+    }
+
+    #[inline(always)]
+    fn is_marked(&self, x: usize, y: usize) -> bool {
+        self.contents[(x - self.x_min) + y * self.x_range]
+    }
+
+    #[inline(always)]
+    fn mark(&mut self, x: usize, y: usize) {
+        self.contents[(x - self.x_min) + y * self.x_range] = true;
+    }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -129,6 +179,7 @@ impl<T> From<(T, T)> for Point<T> {
 }
 
 impl<T: Signed + Sub<Output = T> + Copy> Point<T> {
+    #[inline(always)]
     fn signum(&self, other: &Self) -> Point<T> {
         Point {
             x: (self.x - other.x).signum(),
@@ -138,6 +189,7 @@ impl<T: Signed + Sub<Output = T> + Copy> Point<T> {
 }
 
 impl<T: Add<Output = T> + Copy> AddAssign for Point<T> {
+    #[inline(always)]
     fn add_assign(&mut self, rhs: Self) {
         *self = *self + rhs;
     }
@@ -146,6 +198,7 @@ impl<T: Add<Output = T> + Copy> AddAssign for Point<T> {
 impl<T: Add<Output = T>> Add for Point<T> {
     type Output = Point<T>;
 
+    #[inline(always)]
     fn add(self, rhs: Self) -> Self::Output {
         Point {
             x: self.x + rhs.x,
