@@ -25,10 +25,9 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let div_1 = Packet(vec![Item::Packet(Packet(vec![Item::Value(2)]))]);
     let div_2 = Packet(vec![Item::Packet(Packet(vec![Item::Value(6)]))]);
 
-    let (d1, d2) = inputs
-        .iter()
-        .flat_map(|(a, b)| [a, b].into_iter())
-        .fold((1, 2), |(mut d1, mut d2), packet| {
+    let (d1, d2) = inputs.iter().flat_map(|(a, b)| [a, b].into_iter()).fold(
+        (1, 2),
+        |(mut d1, mut d2), packet| {
             if packet.cmp(&div_1) == Ordering::Less {
                 d1 += 1
             };
@@ -36,7 +35,8 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
                 d2 += 1
             }
             (d1, d2)
-        });
+        },
+    );
 
     let part2 = d1 * d2;
 
@@ -134,9 +134,7 @@ impl Ord for Item {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
             (Item::Value(v1), Item::Value(v2)) => v1.cmp(v2),
-            (Item::Value(v), Item::Packet(p)) => {
-                slice_cmp(&[Item::Value(*v)], &p.0)
-            }
+            (Item::Value(v), Item::Packet(p)) => slice_cmp(&[Item::Value(*v)], &p.0),
             (Item::Packet(_), Item::Value(_)) => other.cmp(self).reverse(),
             (Item::Packet(p1), Item::Packet(p2)) => p1.cmp(p2),
         }
