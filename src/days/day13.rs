@@ -7,19 +7,17 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
     let div_1 = Packet(vec![Item::Packet(Packet(vec![Item::Value(2)]))]);
     let div_2 = Packet(vec![Item::Packet(Packet(vec![Item::Value(6)]))]);
 
-    let (part1, d1, d2) = input
-        .split("\n\n")
-        .map(|lines| {
+    let (part1, d1, d2) = (1..)
+        .zip(input.split("\n\n").map(|lines| {
             let (a, b) = lines.split_once('\n').unwrap();
             (
                 parse_packet(&mut a.as_bytes().iter().copied().peekable()),
                 parse_packet(&mut b.as_bytes().iter().copied().peekable()),
             )
-        })
-        .enumerate()
+        }))
         .fold((0, 1, 2), |(mut part1, mut d1, mut d2), (i, (x, y))| {
             if x < y {
-                part1 += i + 1;
+                part1 += i;
             }
             if x < div_1 {
                 d1 += 1;

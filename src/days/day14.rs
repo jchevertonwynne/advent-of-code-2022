@@ -1,7 +1,7 @@
 use crate::{DayResult, IntoDayResult};
 use bstr::{BStr, ByteSlice};
 use nom::bytes::complete::tag;
-use nom::sequence::{preceded, tuple};
+use nom::sequence::{pair, preceded};
 use nom::IResult;
 use num::Signed;
 use std::cmp::max;
@@ -12,18 +12,11 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
 
     for line in BStr::new(input).lines() {
         let line = unsafe { std::str::from_utf8_unchecked(line) };
-        let (mut rem, start @ (_, y)) = parse_coord_pair(line)?;
-        let mut curr: Point<_> = start.into();
+        let (mut rem, (_, y)) = parse_coord_pair(line)?;
         max_y = max(max_y, y);
 
-        while let Ok((_rem, pair)) = parse_subsequent_pair(rem) {
-            let next_point: Point<_> = pair.into();
-
-            while curr != next_point {
-                curr += next_point.signum(&curr);
-                max_y = max(max_y, curr.y);
-            }
-
+        while let Ok((_rem, (_, y))) = parse_subsequent_pair(rem) {
+            max_y = max(max_y, y);
             rem = _rem;
         }
     }
@@ -36,6 +29,10 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
 
     let mut world = World::new(min_x as usize, max_x as usize, 0, max_y as usize);
 
+    for i in min_x..=max_x {
+        world.mark(i as usize, lowest as usize + 2);
+    }
+
     for line in BStr::new(input).lines() {
         let line = unsafe { std::str::from_utf8_unchecked(line) };
         let (mut rem, start) = parse_coord_pair(line)?;
@@ -44,9 +41,10 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
 
         while let Ok((_rem, pair)) = parse_subsequent_pair(rem) {
             let next_point: Point<_> = pair.into();
+            let unit = next_point.signum(&curr);
 
             while curr != next_point {
-                curr += next_point.signum(&curr);
+                curr += unit;
                 world.mark(curr.x as usize, curr.y as usize);
             }
 
@@ -93,16 +91,6 @@ pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
 
     let mut part2 = part1;
     loop {
-        if sand.y == lowest + 1 {
-            if let Some(prev) = sand_history.pop() {
-                world.mark(sand.x as usize, sand.y as usize);
-                part2 += 1;
-                sand = prev;
-            } else {
-                break;
-            }
-            continue;
-        }
         let pot_down = Point {
             x: sand.x,
             y: sand.y + 1,
@@ -208,10 +196,10 @@ impl<T: Add<Output = T>> Add for Point<T> {
 }
 
 fn parse_coord_pair(input: &str) -> IResult<&str, (i32, i32)> {
-    tuple((
+    pair(
         nom::character::complete::i32,
         preceded(tag(","), nom::character::complete::i32),
-    ))(input)
+    )(input)
 }
 
 fn parse_subsequent_pair(input: &str) -> IResult<&str, (i32, i32)> {
