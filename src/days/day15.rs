@@ -1,15 +1,17 @@
-use std::collections::HashSet;
 use crate::{DayResult, IntoDayResult};
+use fxhash::FxBuildHasher;
 use nom::bytes::complete::tag;
 use nom::combinator::map;
 use nom::sequence::{delimited, preceded, tuple};
 use nom::IResult;
-use fxhash::FxBuildHasher;
+use std::collections::HashSet;
 
-pub fn run(mut input: &'static str) -> anyhow::Result<DayResult> {
-    let (row, max_x, max_y) = match std::env::var_os("TEST") {
-        Some(_) => (10, 20, 20),
-        None => (2_000_000, 4_000_000, 4_000_000),
+pub fn run(input: &'static str, is_test: bool) -> anyhow::Result<DayResult> {
+    let mut input = input;
+    let (row, max_x, max_y) = if is_test {
+        (10, 20, 20)
+    } else {
+        (2_000_000, 4_000_000, 4_000_000)
     };
 
     let mut sensors_and_manhattan = vec![];
@@ -33,7 +35,7 @@ pub fn run(mut input: &'static str) -> anyhow::Result<DayResult> {
             continue;
         }
 
-        for x in sensor.x - rem ..= sensor.x + rem {
+        for x in sensor.x - rem..=sensor.x + rem {
             seen.insert(x);
         }
     }
@@ -97,7 +99,10 @@ fn parse_sensors_and_beacon(input: &str) -> IResult<&str, (Point, Point)> {
         tuple((
             preceded(tag("Sensor at x="), nom::character::complete::i64),
             preceded(tag(", y="), nom::character::complete::i64),
-            preceded(tag(": closest beacon is at x="), nom::character::complete::i64),
+            preceded(
+                tag(": closest beacon is at x="),
+                nom::character::complete::i64,
+            ),
             delimited(tag(", y="), nom::character::complete::i64, tag("\n")),
         )),
         |(x1, y1, x2, y2)| (Point { x: x1, y: y1 }, Point { x: x2, y: y2 }),
@@ -112,7 +117,7 @@ mod tests {
     #[test]
     fn test_example_answers() {
         std::env::set_var("TEST", "1");
-        let result = run(include_str!("../../input/test/15.txt"));
+        let result = run(include_str!("../../input/test/15.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -124,7 +129,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/15.txt"));
+        let result = run(include_str!("../../input/real/15.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

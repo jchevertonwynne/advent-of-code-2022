@@ -1,6 +1,6 @@
 use crate::{DayResult, IntoDayResult};
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, is_test: bool) -> anyhow::Result<DayResult> {
     unimplemented!();
 }
 
@@ -11,7 +11,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/00.txt"));
+        let result = run(include_str!("../../input/test/00.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -23,7 +23,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/00.txt"));
+        let result = run(include_str!("../../input/real/00.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

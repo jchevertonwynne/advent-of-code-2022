@@ -3,7 +3,7 @@ use crate::{DayResult, IntoDayResult};
 use bstr::{BStr, ByteSlice};
 use nom::Slice;
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let mut fs = load_filesystem(input);
     let (sum, part1) = find_dir_sizes(&mut fs);
     let part2 = find_dir_to_delete(&fs, sum);
@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/07.txt"));
+        let result = run(include_str!("../../input/test/07.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/07.txt"));
+        let result = run(include_str!("../../input/real/07.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

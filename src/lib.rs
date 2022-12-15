@@ -143,7 +143,7 @@ pub struct DayResult {
 }
 
 pub struct DayEntry {
-    pub f: fn(&'static str) -> anyhow::Result<DayResult>,
+    pub f: fn(&'static str, bool) -> anyhow::Result<DayResult>,
     pub real: &'static str,
     pub test: &'static str,
 }
@@ -156,7 +156,7 @@ pub fn run_day(
     let input = if is_test { *test } else { *real };
 
     let start = Instant::now();
-    let answer = f(input)?;
+    let answer = f(input, is_test)?;
     let end = start.elapsed();
 
     println!("day {}:", day);

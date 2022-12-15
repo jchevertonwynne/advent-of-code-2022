@@ -1,7 +1,7 @@
 use crate::{Day10Result, DayResult, IntoDayResult};
 use bstr::{BStr, ByteSlice};
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let mut part1 = 0;
     let mut part2 = Day10Result([0; 6]);
 
@@ -83,7 +83,7 @@ mod tests {
 ######      ######      ######      ####
 #######       #######       #######";
 
-        let result = run(include_str!("../../input/test/10.txt"));
+        let result = run(include_str!("../../input/test/10.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/10.txt"));
+        let result = run(include_str!("../../input/real/10.txt"), true);
         let p2 = "###  #### ###   ##  #### ####   ## ###
 #  #    # #  # #  #    # #       # #  #
 #  #   #  ###  #      #  ###     # ###

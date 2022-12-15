@@ -5,7 +5,7 @@ use nom::bytes::complete::tag;
 use nom::sequence::{preceded, tuple};
 use nom::IResult;
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let mut lines_iter = BStr::new(input).lines();
 
     let mut cranes_part1: Vec<Vec<char>> = vec![];
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/05.txt"));
+        let result = run(include_str!("../../input/test/05.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/05.txt"));
+        let result = run(include_str!("../../input/real/05.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

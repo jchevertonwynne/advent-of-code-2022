@@ -5,7 +5,7 @@ use fxhash::FxBuildHasher;
 use std::collections::{HashSet, VecDeque};
 use std::hash::{BuildHasher, Hash};
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let mut seen = HashSet::with_hasher(FxBuildHasher::default());
     let mut queue = VecDeque::new();
 
@@ -155,7 +155,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/12.txt"));
+        let result = run(include_str!("../../input/test/12.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/12.txt"));
+        let result = run(include_str!("../../input/real/12.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

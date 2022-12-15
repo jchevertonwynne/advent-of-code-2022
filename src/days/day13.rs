@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use std::fmt::{Debug, Formatter};
 use std::iter::Peekable;
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let div_1 = Packet(vec![Item::Packet(Packet(vec![Item::Value(2)]))]);
     let div_2 = Packet(vec![Item::Packet(Packet(vec![Item::Value(6)]))]);
 
@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/13.txt"));
+        let result = run(include_str!("../../input/test/13.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -163,7 +163,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/13.txt"));
+        let result = run(include_str!("../../input/real/13.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

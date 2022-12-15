@@ -1,7 +1,7 @@
 use crate::{DayResult, IntoDayResult};
 use anyhow::Context;
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let input = input.as_bytes();
 
     let part1 = find_unique_len(4, input).context("exp an an answer")?;
@@ -34,7 +34,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/06.txt"));
+        let result = run(include_str!("../../input/test/06.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/06.txt"));
+        let result = run(include_str!("../../input/real/06.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

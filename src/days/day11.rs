@@ -2,7 +2,7 @@ use crate::{DayResult, IntoDayResult};
 use anyhow::Context;
 use std::rc::Rc;
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let monkeys = load_monkeys(input)?;
 
     let part1 = play_game::<true>(monkeys.clone(), 20, 0);
@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/11.txt"));
+        let result = run(include_str!("../../input/test/11.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/11.txt"));
+        let result = run(include_str!("../../input/real/11.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

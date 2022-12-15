@@ -2,7 +2,7 @@ use crate::days::byte_slice_to_int;
 use crate::{DayResult, IntoDayResult};
 use bstr::{BStr, ByteSlice};
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     const X: usize = 332;
     const X_OFF: isize = 50;
     const Y: usize = 450;
@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/09.txt"));
+        let result = run(include_str!("../../input/test/09.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/09.txt"));
+        let result = run(include_str!("../../input/real/09.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

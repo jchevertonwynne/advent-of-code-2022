@@ -7,7 +7,7 @@ const LOOKUP: [u64; 64] = [
     20, 21, 22, 23, 24, 25, 26, 0, 0, 0, 0, 0, 0,
 ];
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let (part1, part2, _) = BStr::new(input).lines().enumerate().fold(
         (0_u64, 0_u64, u64::MAX),
         |(mut part1, mut part2, mut group), (i, line)| {
@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/03.txt"));
+        let result = run(include_str!("../../input/test/03.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/03.txt"));
+        let result = run(include_str!("../../input/real/03.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

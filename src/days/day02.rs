@@ -12,7 +12,7 @@ const LOOKUP_MOVE: [[usize; 3]; 3] = [
     [2, 6, 7], // scissors
 ];
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let input = input.as_bytes();
 
     (0..input.len())
@@ -34,7 +34,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/02.txt"));
+        let result = run(include_str!("../../input/test/02.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/02.txt"));
+        let result = run(include_str!("../../input/real/02.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {

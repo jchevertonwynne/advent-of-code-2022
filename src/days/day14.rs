@@ -7,7 +7,7 @@ use num::Signed;
 use std::cmp::max;
 use std::ops::{Add, AddAssign, Sub};
 
-pub fn run(input: &'static str) -> anyhow::Result<DayResult> {
+pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let mut max_y = i32::MIN;
 
     for line in BStr::new(input).lines() {
@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn test_example_answers() {
-        let result = run(include_str!("../../input/test/14.txt"));
+        let result = run(include_str!("../../input/test/14.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -225,7 +225,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/14.txt"));
+        let result = run(include_str!("../../input/real/14.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {
