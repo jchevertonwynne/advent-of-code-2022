@@ -23,7 +23,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/00.txt"), true);
+        let result = run(include_str!("../../input/real/00.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {

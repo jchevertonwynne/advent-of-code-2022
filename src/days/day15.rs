@@ -4,6 +4,7 @@ use nom::bytes::complete::tag;
 use nom::combinator::map;
 use nom::sequence::{delimited, preceded, tuple};
 use nom::IResult;
+use std::cmp::{max, min};
 use std::collections::HashSet;
 
 pub fn run(input: &'static str, is_test: bool) -> anyhow::Result<DayResult> {
@@ -14,10 +15,10 @@ pub fn run(input: &'static str, is_test: bool) -> anyhow::Result<DayResult> {
         (2_000_000, 4_000_000, 4_000_000)
     };
 
+    let mut ranges = vec![];
     let mut sensors_and_manhattan = vec![];
 
     let mut beacons_on_line = HashSet::with_hasher(FxBuildHasher::default());
-    let mut seen = HashSet::with_hasher(FxBuildHasher::default());
     while let Ok((_input, (sensor, beacon))) = parse_sensors_and_beacon(input) {
         input = _input;
 
@@ -35,15 +36,29 @@ pub fn run(input: &'static str, is_test: bool) -> anyhow::Result<DayResult> {
             continue;
         }
 
-        for x in sensor.x - rem..=sensor.x + rem {
-            seen.insert(x);
-        }
+        ranges.push(sensor.x - rem..=sensor.x + rem);
     }
 
+    let range_sum = ranges
+        .iter()
+        .map(|r| (r.end() - r.start()) + 1)
+        .sum::<i64>();
+    let overlaps = ranges
+        .iter()
+        .enumerate()
+        .flat_map(|(i, r1)| ranges[0..i].iter().map(move |r2| (r1, r2)))
+        .filter_map(|(r1, r2)| {
+            if r1.start() > r2.end() || r2.start() > r1.end() {
+                None
+            } else {
+                Some((min(r1.end(), r2.end()) - max(r1.start(), r2.start())) + 1)
+            }
+        })
+        .sum::<i64>();
+
+    let part_1 = range_sum - (overlaps + beacons_on_line.len() as i64);
+
     sensors_and_manhattan.sort_unstable_by(|a, b| b.1.cmp(&a.1));
-
-    let part_1 = seen.len() - beacons_on_line.len();
-
     let part_2 = solve_part2(&sensors_and_manhattan, max_x, max_y);
 
     (part_1, part_2).into_result()
@@ -117,7 +132,7 @@ mod tests {
     #[test]
     fn test_example_answers() {
         std::env::set_var("TEST", "1");
-        let result = run(include_str!("../../input/test/15.txt"), false);
+        let result = run(include_str!("../../input/test/15.txt"), true);
         assert_eq!(
             result.unwrap(),
             DayResult {
@@ -129,11 +144,11 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/15.txt"), true);
+        let result = run(include_str!("../../input/real/15.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(5125700.into()),
+                part1: Some(5_125_700.into()),
                 part2: Some(11_379_394_658_764_i64.into()),
             }
         );

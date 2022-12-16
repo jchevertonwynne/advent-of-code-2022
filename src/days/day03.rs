@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/03.txt"), true);
+        let result = run(include_str!("../../input/real/03.txt"), false);
         assert_eq!(
             result.unwrap(),
             DayResult {

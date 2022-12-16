@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_answers() {
-        let result = run(include_str!("../../input/real/10.txt"), true);
+        let result = run(include_str!("../../input/real/10.txt"), false);
         let p2 = "###  #### ###   ##  #### ####   ## ###
 #  #    # #  # #  #    # #       # #  #
 #  #   #  ###  #      #  ###     # ###
