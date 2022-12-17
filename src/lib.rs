@@ -1,3 +1,5 @@
+extern crate core;
+
 pub mod days;
 
 use std::fmt::{Display, Formatter};

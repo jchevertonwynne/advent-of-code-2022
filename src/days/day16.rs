@@ -6,7 +6,7 @@ use nom::character::complete::alpha1;
 use nom::multi::separated_list1;
 use nom::sequence::{delimited, preceded, tuple};
 use nom::IResult;
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::BuildHasher;
 
@@ -33,13 +33,13 @@ pub fn run(mut input: &'static str, _: bool) -> anyhow::Result<DayResult> {
         }
     }
 
-    println!("{:?}", distances);
-
     let worth_turning_on = valves
         .iter()
         .filter(|(_, info)| info.flow_rate != 0)
         .map(|(name, _)| *name)
-        .collect::<HashSet<_, FxBuildHasher>>();
+        .collect::<Vec<_>>();
+
+    let turned_on = &mut HashSet::with_hasher(FxBuildHasher::default());
 
     let part_1 = solve(
         30,
@@ -47,12 +47,35 @@ pub fn run(mut input: &'static str, _: bool) -> anyhow::Result<DayResult> {
         &valves,
         &distances,
         &worth_turning_on,
-        &mut HashSet::with_hasher(FxBuildHasher::default()),
+        turned_on,
         0,
         0,
     );
 
-    part_1.into_result()
+    turned_on.clear();
+
+    let (part_2, mut history) = solve2(
+        26,
+        "AA",
+        "AA",
+        0,
+        0,
+        0,
+        0,
+        &valves,
+        &distances,
+        &worth_turning_on,
+        turned_on,
+        0,
+        0,
+        vec![]
+    );
+
+    history.iter_mut().for_each(|v| v.1 = 27 - v.1);
+    history.sort_unstable_by(|v1, v2| v1.1.cmp(&v2.1));
+    println!("{:?}", history);
+
+    (part_1, part_2).into_result()
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -61,42 +84,19 @@ fn solve<'a, H: BuildHasher>(
     current_valve: &'a str,
     valves: &HashMap<&'a str, Valve, H>,
     distances: &HashMap<(&'a str, &'a str), u64, H>,
-    worth_turning_on: &HashSet<&'a str, H>,
+    worth_turning_on: &Vec<&'a str>,
     turned_on: &mut HashSet<&'a str, H>,
     flow_rate: u64,
     cumulative: u64,
 ) -> u64 {
-    let new_cumulative = cumulative + flow_rate;
-    let mut result = new_cumulative + flow_rate * turn;
-
     if turn == 0 {
-        return result;
+        return cumulative;
     }
 
-    if turned_on.insert(current_valve) {
-        let new_flow_rate = flow_rate + valves.get(&current_valve).unwrap().flow_rate;
-        result = max(
-            result,
-            solve(
-                turn - 1,
-                current_valve,
-                valves,
-                distances,
-                worth_turning_on,
-                turned_on,
-                new_flow_rate,
-                new_cumulative,
-            ),
-        );
-        turned_on.remove(current_valve);
-    }
+    let mut result = cumulative + turn * flow_rate;
 
     for &worth_checking in worth_turning_on {
         if worth_checking == current_valve {
-            continue;
-        }
-
-        if turned_on.contains(&worth_checking) {
             continue;
         }
 
@@ -105,22 +105,149 @@ fn solve<'a, H: BuildHasher>(
             continue;
         }
 
-        result = max(
-            result,
-            solve(
-                turn - dist,
-                worth_checking,
-                valves,
-                distances,
-                worth_turning_on,
-                turned_on,
-                flow_rate,
-                new_cumulative,
-            ),
-        );
+        if turned_on.insert(worth_checking) {
+            let new_flow_rate = flow_rate + valves.get(&worth_checking).unwrap().flow_rate;
+            let new_cumulative = cumulative + flow_rate * (dist + 1);
+            result = max(
+                result,
+                solve(
+                    turn - (dist + 1),
+                    worth_checking,
+                    valves,
+                    distances,
+                    worth_turning_on,
+                    turned_on,
+                    new_flow_rate,
+                    new_cumulative,
+                ),
+            );
+
+            turned_on.remove(&worth_checking);
+        }
     }
 
     result
+}
+
+#[allow(clippy::too_many_arguments)]
+fn solve2<'a, H: BuildHasher>(
+    turn: u64,
+    a_valve: &'a str,
+    b_valve: &'a str,
+    a_remaining: u64,
+    b_remaining: u64,
+    a_future_flow: u64,
+    b_future_flow: u64,
+    valves: &HashMap<&'a str, Valve, H>,
+    distances: &HashMap<(&'a str, &'a str), u64, H>,
+    worth_turning_on: &Vec<&'a str>,
+    turned_on: &mut HashSet<&'a str, H>,
+    flow_rate: u64,
+    cumulative: u64,
+    history: Vec<(&'a str, u64)>
+) -> (u64, Vec<(&'a str, u64)>) {
+    if turn == 0 {
+        return (cumulative, history);
+    }
+
+    let mut result = cumulative + turn * flow_rate;
+    let mut best_history = history.clone();
+
+    if a_remaining == 0 {
+        for &new_a_valve in worth_turning_on {
+            if new_a_valve == a_valve {
+                continue;
+            }
+
+            let dist = *distances.get(&(a_valve, new_a_valve)).unwrap();
+            if dist >= turn {
+                continue;
+            }
+
+            if turned_on.insert(new_a_valve) {
+                let new_valve = valves.get(&new_a_valve).unwrap();
+                let wanted_dist = dist + 1;
+                let actual_dist = min(wanted_dist, b_remaining);
+                let new_flow_rate = flow_rate + a_future_flow;
+                let new_cumulative = cumulative + new_flow_rate * actual_dist;
+                let new_a_future_flow = new_valve.flow_rate;
+                let new_turn = turn - actual_dist;
+                let mut new_history = history.clone();
+                new_history.push((new_a_valve, turn - wanted_dist));
+                let (a, new_history) = solve2(
+                    new_turn,
+                    new_a_valve,
+                    b_valve,
+                    wanted_dist - actual_dist,
+                    b_remaining - actual_dist,
+                    new_a_future_flow,
+                    b_future_flow,
+                    valves,
+                    distances,
+                    worth_turning_on,
+                    turned_on,
+                    new_flow_rate,
+                    new_cumulative,
+                    new_history,
+                );
+                if a > result {
+                    result = a;
+                    best_history = new_history;
+                }
+
+                turned_on.remove(&new_a_valve);
+            }
+        }
+    }
+
+    if b_remaining == 0 {
+        for &new_b_valve in worth_turning_on {
+            if new_b_valve == b_valve {
+                continue;
+            }
+
+            let dist = *distances.get(&(b_valve, new_b_valve)).unwrap();
+            if dist >= turn {
+                continue;
+            }
+
+            if turned_on.insert(new_b_valve) {
+                let new_valve = valves.get(&new_b_valve).unwrap();
+                let wanted_dist = dist + 1;
+                let actual_dist = min(wanted_dist, a_remaining);
+                let new_flow_rate = flow_rate + b_future_flow;
+                let new_cumulative = cumulative + new_flow_rate * actual_dist;
+                let new_b_future_flow = new_valve.flow_rate;
+                let new_turn = turn - actual_dist;
+                let mut new_history = history.clone();
+                new_history.push((new_b_valve, turn));
+                let (a, new_history) = solve2(
+                    new_turn,
+                    a_valve,
+                    new_b_valve,
+                    a_remaining - actual_dist,
+                    wanted_dist - actual_dist,
+                    a_future_flow,
+                    new_b_future_flow,
+                    valves,
+                    distances,
+                    worth_turning_on,
+                    turned_on,
+                    new_flow_rate,
+                    new_cumulative,
+                    new_history
+                );
+                if a > result {
+                    result = a;
+                    best_history = new_history;
+                }
+
+                turned_on.remove(&new_b_valve);
+            }
+        }
+    }
+
+    (result, best_history)
 }
 
 fn dist_to(start: &str, end: &str, valves: &HashMap<&str, Valve, impl BuildHasher>) -> u64 {
