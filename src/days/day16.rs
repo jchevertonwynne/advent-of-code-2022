@@ -3,19 +3,18 @@ use fxhash::FxBuildHasher;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::alpha1;
-use nom::combinator::map;
 use nom::multi::separated_list1;
 use nom::sequence::{delimited, preceded, tuple};
 use nom::IResult;
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::BuildHasher;
-use std::result;
 
 pub fn run(mut input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let mut valves = HashMap::with_hasher(FxBuildHasher::default());
 
-    while let Ok((_input, (name, flow_rate, leads_to))) = parse_row(input) {
+    while !input.is_empty() {
+        let (_input, (name, flow_rate, leads_to)) = parse_row(input)?;
         input = _input;
         valves.insert(
             name,
@@ -56,11 +55,11 @@ pub fn run(mut input: &'static str, _: bool) -> anyhow::Result<DayResult> {
 
     turned_on.clear();
 
-    let start = Some(Journey {
+    let start = Journey {
         valve: "AA",
         remaining_turns: 0,
         future_flow: 0,
-    });
+    };
     let part_2 = solve_part2(
         26,
         0,
@@ -74,7 +73,6 @@ pub fn run(mut input: &'static str, _: bool) -> anyhow::Result<DayResult> {
         turned_on,
     );
 
-
     (part_1, part_2).into_result()
 }
 
@@ -83,8 +81,8 @@ fn solve_part2<'a, H: BuildHasher>(
     turns_remaining: u64,
     flow_rate: u64,
     cumulative: u64,
-    a: Option<Journey>,
-    b: Option<Journey>,
+    a: Journey,
+    b: Journey,
     flipped: bool,
     valves: &HashMap<&'a str, Valve, H>,
     distances: &HashMap<(&'a str, &'a str), u64, H>,
@@ -97,16 +95,16 @@ fn solve_part2<'a, H: BuildHasher>(
 
     let mut result = cumulative + turns_remaining * flow_rate;
 
-    if let Some(Journey {
+    let Journey {
         valve: a_valve,
         remaining_turns: a_remaining_turns,
         future_flow: a_future_flow,
-    }) = a
-    {
-        if a_remaining_turns == 0 {
-            let new_flow_rate = flow_rate + a_future_flow;
+    } = a;
 
-            let mut got_one = false;
+    if a_remaining_turns == 0 {
+        let new_flow_rate = flow_rate + a_future_flow;
+
+        if worth_turning_on.len() != turned_on.len() {
             for &new_a_valve in worth_turning_on {
                 if new_a_valve == a_valve {
                     continue;
@@ -118,10 +116,9 @@ fn solve_part2<'a, H: BuildHasher>(
                 }
 
                 if turned_on.insert(new_a_valve) {
-                    got_one = true;
                     let new_a_valve_info = valves.get(&new_a_valve).unwrap();
                     let new_a_rem_dist = dist + 1;
-                    let b = b.clone().unwrap();
+                    let b = b.clone();
                     let b_rem_dist = b.remaining_turns;
                     let dist_to_move = min(turns_remaining, min(new_a_rem_dist, b_rem_dist));
 
@@ -129,16 +126,16 @@ fn solve_part2<'a, H: BuildHasher>(
                     let new_a_future_flow = new_a_valve_info.flow_rate;
                     let new_turns_remaining = turns_remaining - dist_to_move;
 
-                    let new_a = Some(Journey {
+                    let new_a = Journey {
                         valve: new_a_valve,
                         remaining_turns: new_a_rem_dist - dist_to_move,
                         future_flow: new_a_future_flow,
-                    });
-                    let new_b = Some(Journey {
+                    };
+                    let new_b = Journey {
                         valve: b.valve,
                         remaining_turns: b.remaining_turns - dist_to_move,
                         future_flow: b.future_flow,
-                    });
+                    };
 
                     let new_res = solve_part2(
                         new_turns_remaining,
@@ -159,53 +156,38 @@ fn solve_part2<'a, H: BuildHasher>(
                     turned_on.remove(new_a_valve);
                 }
             }
-
-            if !got_one {
-                if let Some(Journey {
-                    remaining_turns,
-                    future_flow,
-                    ..
-                }) = b
-                {
-                    let turns_to_do = min(turns_remaining, remaining_turns);
-                    let new_result = cumulative
-                        + new_flow_rate * remaining_turns
-                        + (new_flow_rate + future_flow) * (turns_remaining - turns_to_do);
-                    if new_result > result {
-                        result = new_result;
-                    }
-                }
+        } else {
+            let Journey {
+                remaining_turns,
+                future_flow,
+                ..
+            } = b;
+            let turns_to_do = min(turns_remaining, remaining_turns);
+            let new_result = cumulative
+                + new_flow_rate * remaining_turns
+                + (new_flow_rate + future_flow) * (turns_remaining - turns_to_do);
+            if new_result > result {
+                result = new_result;
             }
         }
     }
 
-    if let Some(Journey {
-        valve: b_valve,
-        remaining_turns: b_remaining_turns,
-        future_flow: b_future_flow,
-    }) = b
-    {
-        if b_remaining_turns == 0 && !flipped {
-            let new_res = solve_part2(
-                turns_remaining,
-                flow_rate,
-                cumulative,
-                Some(Journey {
-                    valve: b_valve,
-                    remaining_turns: b_remaining_turns,
-                    future_flow: b_future_flow,
-                }),
-                a,
-                true,
-                valves,
-                distances,
-                worth_turning_on,
-                turned_on,
-            );
+    if b.remaining_turns == 0 && !flipped {
+        let new_res = solve_part2(
+            turns_remaining,
+            flow_rate,
+            cumulative,
+            b,
+            a,
+            true,
+            valves,
+            distances,
+            worth_turning_on,
+            turned_on,
+        );
 
-            if new_res > result {
-                result = new_res;
-            }
+        if new_res > result {
+            result = new_res;
         }
     }
 
@@ -329,8 +311,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(1651.into()),
+                part2: Some(1707.into()),
             }
         );
     }
@@ -341,8 +323,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(1728.into()),
+                part2: Some(2304.into()),
             }
         );
     }
