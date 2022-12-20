@@ -6,7 +6,33 @@ use anyhow::Context;
 fn main() -> anyhow::Result<()> {
     let is_test = std::env::var_os("TEST").is_some();
 
-    let days = vec![
+    let days = get_days();
+
+    let runnables =
+        Runnable::load_all(std::env::args().skip(1)).context("failed to parse runnables")?;
+
+    for runnable in runnables {
+        let days_to_run = match runnable {
+            Runnable::Latest => {
+                let day = days.len() as u32;
+                day..=day
+            }
+            Runnable::All => {
+                let last = days.len() as u32;
+                1..=last
+            }
+            Runnable::Range { first, last } => first..=last,
+        };
+        days_to_run
+            .into_iter()
+            .try_for_each(|day| run_day(day, &days[(day - 1) as usize], is_test))?;
+    }
+
+    Ok(())
+}
+
+fn get_days() -> Vec<DayEntry> {
+    vec![
         DayEntry {
             f: days::day01::run,
             real: include_str!("../input/real/01.txt"),
@@ -87,27 +113,25 @@ fn main() -> anyhow::Result<()> {
             real: include_str!("../input/real/16.txt"),
             test: include_str!("../input/test/16.txt"),
         },
-    ];
-
-    let runnables =
-        Runnable::load_all(std::env::args().skip(1)).context("failed to parse runnables")?;
-
-    for runnable in runnables {
-        let days_to_run = match runnable {
-            Runnable::Latest => {
-                let day = days.len() as u32;
-                day..=day
-            }
-            Runnable::All => {
-                let last = days.len() as u32;
-                1..=last
-            }
-            Runnable::Range { first, last } => first..=last,
-        };
-        days_to_run
-            .into_iter()
-            .try_for_each(|day| run_day(day, &days[(day - 1) as usize], is_test))?;
-    }
-
-    Ok(())
+        DayEntry {
+            f: days::day17::run,
+            real: include_str!("../input/real/17.txt"),
+            test: include_str!("../input/test/17.txt"),
+        },
+        DayEntry {
+            f: days::day18::run,
+            real: include_str!("../input/real/18.txt"),
+            test: include_str!("../input/test/18.txt"),
+        },
+        DayEntry {
+            f: days::day19::run,
+            real: include_str!("../input/real/19.txt"),
+            test: include_str!("../input/test/19.txt"),
+        },
+        DayEntry {
+            f: days::day20::run,
+            real: include_str!("../input/real/20.txt"),
+            test: include_str!("../input/test/20.txt"),
+        },
+    ]
 }

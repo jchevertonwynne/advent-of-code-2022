@@ -17,6 +17,10 @@ pub mod day13;
 pub mod day14;
 pub mod day15;
 pub mod day16;
+pub mod day17;
+pub mod day18;
+pub mod day19;
+pub mod day20;
 
 #[inline(always)]
 pub fn byte_slice_to_int<T: Num + From<u8> + Add + Sub + Mul + Copy>(slice: &[u8]) -> T {
