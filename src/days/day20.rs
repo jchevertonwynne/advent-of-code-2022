@@ -1,4 +1,3 @@
-use std::ops::Rem;
 use crate::{DayResult, IntoDayResult};
 use nom::bytes::complete::tag;
 use nom::character::complete as num;
@@ -6,6 +5,7 @@ use nom::combinator::all_consuming;
 use nom::multi::many0;
 use nom::sequence::terminated;
 use nom::IResult;
+use std::ops::Rem;
 
 pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let (_, numbers) = parse_numbers(input)?;
