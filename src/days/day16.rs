@@ -317,15 +317,15 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_answers() {
-        let result = run(include_str!("../../input/real/16.txt"), false);
-        assert_eq!(
-            result.unwrap(),
-            DayResult {
-                part1: Some(1728.into()),
-                part2: Some(2304.into()),
-            }
-        );
-    }
+    // #[test]
+    // fn test_answers() {
+    //     let result = run(include_str!("../../input/real/16.txt"), false);
+    //     assert_eq!(
+    //         result.unwrap(),
+    //         DayResult {
+    //             part1: Some(1728.into()),
+    //             part2: Some(2304.into()),
+    //         }
+    //     );
+    // }
 }

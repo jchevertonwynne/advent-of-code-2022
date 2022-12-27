@@ -80,32 +80,6 @@ fn solve(nums: impl IntoIterator<Item = i64>, mixes: usize) -> i64 {
         + numbers[(zero_ind + 3000) % numbers.len()].val
 }
 
-/*
-Initial arrangement:
-1, 2, -3, 3, -2, 0, 4
-
-1 moves between 2 and -3:
-2, 1, -3, 3, -2, 0, 4
-
-2 moves between -3 and 3:
-1, -3, 2, 3, -2, 0, 4
-
--3 moves between -2 and 0:
-1, 2, 3, -2, -3, 0, 4
-
-3 moves between 0 and 4:
-1, 2, -2, -3, 0, 3, 4
-
--2 moves between 4 and 1:
-1, 2, -3, 0, 3, 4, -2
-
-0 does not move:
-1, 2, -3, 0, 3, 4, -2
-
-4 moves between -3 and 0:
-1, 2, -3, 4, 0, 3, -2
-*/
-
 fn parse_numbers(input: &str) -> IResult<&str, Vec<i64>> {
     all_consuming(many0(terminated(num::i64, tag("\n"))))(input)
 }
@@ -127,8 +101,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(3.into()),
+                part2: Some(1623178306.into()),
             }
         );
     }
@@ -139,8 +113,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(8764.into()),
+                part2: Some(535648840980_i64.into()),
             }
         );
     }

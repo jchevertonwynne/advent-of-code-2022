@@ -49,7 +49,6 @@ fn parse_packet<I: Iterator<Item = u8>>(input: &mut Peekable<I>) -> Packet {
             }
             b']' => return Packet(items),
             _ => {
-                println!("bad char: {}", val as char);
                 unreachable!()
             }
         }

@@ -133,5 +133,25 @@ fn get_days() -> Vec<DayEntry> {
             real: include_str!("../input/real/20.txt"),
             test: include_str!("../input/test/20.txt"),
         },
+        DayEntry {
+            f: days::day21::run,
+            real: include_str!("../input/real/21.txt"),
+            test: include_str!("../input/test/21.txt"),
+        },
+        DayEntry {
+            f: days::day22::run,
+            real: include_str!("../input/real/22.txt"),
+            test: include_str!("../input/test/22.txt"),
+        },
+        DayEntry {
+            f: days::day23::run,
+            real: include_str!("../input/real/23.txt"),
+            test: include_str!("../input/test/23.txt"),
+        },
+        DayEntry {
+            f: days::day24::run,
+            real: include_str!("../input/real/24.txt"),
+            test: include_str!("../input/test/24.txt"),
+        },
     ]
 }

@@ -167,7 +167,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
+                part1: Some(3068.into()),
                 part2: None,
             }
         );
@@ -179,7 +179,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
+                part1: Some(3127.into()),
                 part2: None,
             }
         );

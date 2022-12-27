@@ -1,5 +1,6 @@
 use crate::days::day18::SurfaceType::{Exterior, Interior, Surface};
 use crate::{DayResult, IntoDayResult};
+use fxhash::FxBuildHasher;
 use nom::bytes::complete::tag;
 use nom::combinator::map;
 use nom::sequence::tuple;
@@ -7,7 +8,6 @@ use nom::IResult;
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 use std::hash::BuildHasher;
-use fxhash::FxBuildHasher;
 
 pub fn run(mut input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let mut points = HashSet::with_hasher(FxBuildHasher::default());
@@ -181,8 +181,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(64.into()),
+                part2: Some(58.into()),
             }
         );
     }
@@ -193,8 +193,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(3564.into()),
+                part2: Some(2106.into()),
             }
         );
     }
