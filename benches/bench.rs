@@ -44,8 +44,11 @@ fn bench_days(c: &mut Criterion) {
     // c.bench_function("day 14", |b| {
     //     b.iter(|| day14::run(black_box(include_str!("../input/real/14.txt")), false))
     // });
-    c.bench_function("day 15", |b| {
-        b.iter(|| day15::run(black_box(include_str!("../input/real/15.txt")), false))
+    // c.bench_function("day 15", |b| {
+    //     b.iter(|| day15::run(black_box(include_str!("../input/real/15.txt")), false))
+    // });
+    c.bench_function("day 21", |b| {
+        b.iter(|| day21::run(black_box(include_str!("../input/real/21.txt")), false))
     });
 }
 

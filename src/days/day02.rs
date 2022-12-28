@@ -50,8 +50,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(Answers::Usize(9241)),
-                part2: Some(Answers::Usize(14610)),
+                part1: Some(Answers::Usize(9_241)),
+                part2: Some(Answers::Usize(14_610)),
             }
         );
     }

@@ -97,24 +97,24 @@ fn is_exterior(
 
     let mut rec_checker = || {
         if point[0] < mins[0] {
-            return (Exterior, true);
+            return Exterior;
         }
         if point[0] > maxes[0] {
-            return (Exterior, true);
+            return Exterior;
         }
 
         if point[1] < mins[1] {
-            return (Exterior, true);
+            return Exterior;
         }
         if point[1] > maxes[1] {
-            return (Exterior, true);
+            return Exterior;
         }
 
         if point[2] < mins[2] {
-            return (Exterior, true);
+            return Exterior;
         }
         if point[2] > maxes[2] {
-            return (Exterior, true);
+            return Exterior;
         }
 
         let mods = [
@@ -142,14 +142,14 @@ fn is_exterior(
             })
             .any(|v| v == Exterior)
         {
-            (Exterior, true)
+            Exterior
         } else {
-            (Interior, false)
+            Interior
         }
     };
 
-    let (surface, def_known) = rec_checker();
-    if def_known {
+    let surface = rec_checker();
+    if surface == Exterior {
         known.insert(point, surface);
     }
 
@@ -193,8 +193,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(3564.into()),
-                part2: Some(2106.into()),
+                part1: Some(3_564.into()),
+                part2: Some(2_106.into()),
             }
         );
     }

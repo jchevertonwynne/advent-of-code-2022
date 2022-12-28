@@ -311,8 +311,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(1651.into()),
-                part2: Some(1707.into()),
+                part1: Some(1_651.into()),
+                part2: Some(1_707.into()),
             }
         );
     }

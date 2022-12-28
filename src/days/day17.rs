@@ -46,7 +46,7 @@ pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
 
     let mut highest_settled = 0;
 
-    for &shape in SHAPES.iter().cycle().take(2022) {
+    for &shape in SHAPES.iter().cycle().take(2_022) {
         let offset = Point {
             x: 2,
             y: highest_settled + 3,
@@ -167,7 +167,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(3068.into()),
+                part1: Some(3_068.into()),
                 part2: None,
             }
         );
@@ -179,7 +179,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(3127.into()),
+                part1: Some(3_127.into()),
                 part2: None,
             }
         );

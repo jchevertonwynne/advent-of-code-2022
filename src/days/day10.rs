@@ -87,7 +87,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(13140.into()),
+                part1: Some(13_140.into()),
                 part2: Some(build_p2(p2).into()),
             }
         );
@@ -105,7 +105,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(14520.into()),
+                part1: Some(14_520.into()),
                 part2: Some(build_p2(p2).into()),
             }
         );

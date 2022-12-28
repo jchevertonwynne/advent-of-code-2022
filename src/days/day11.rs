@@ -7,7 +7,7 @@ pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
 
     let part1 = play_game::<true>(monkeys.clone(), 20, 0);
     let modulo = monkeys.iter().map(|m| m.div).product();
-    let part2 = play_game::<false>(monkeys, 10000, modulo);
+    let part2 = play_game::<false>(monkeys, 10_000, modulo);
 
     (part1, part2).into_result()
 }
@@ -123,8 +123,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(10605.into()),
-                part2: Some(2713310158_usize.into()),
+                part1: Some(10_605.into()),
+                part2: Some(2_713_310_158_usize.into()),
             }
         );
     }
@@ -135,8 +135,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(54036.into()),
-                part2: Some(13237873355_usize.into()),
+                part1: Some(54_036.into()),
+                part2: Some(13_237_873_355_usize.into()),
             }
         );
     }

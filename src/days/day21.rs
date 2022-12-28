@@ -1,57 +1,84 @@
 use crate::{DayResult, IntoDayResult};
+use anyhow::Context;
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_while_m_n};
-use nom::combinator::map;
+use nom::character::is_alphabetic;
+use nom::combinator::{map, map_res};
 use nom::sequence::tuple;
 use nom::IResult;
-use std::collections::HashMap;
+use std::cell::Cell;
+use std::collections::{HashMap, VecDeque};
 use std::fmt::Debug;
-use anyhow::Context;
+use std::rc::Rc;
 
 pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
-    let mut ops = HashMap::new();
-
     let mut input = input.as_bytes();
+
+    let mut ops_optimised = HashMap::new();
+    let mut to_optimise = VecDeque::new();
 
     while !input.is_empty() {
         let (_input, (k, op)) = parse_line(input)?;
         input = _input;
-        ops.insert(k, op);
+        match op {
+            OpUnoptimised::Literal(v) => {
+                ops_optimised.insert(k, Rc::new(Op::Literal(Cell::new(v))));
+            }
+            OpUnoptimised::Compound {
+                first,
+                sign,
+                second,
+            } => {
+                to_optimise.push_front((k, (first, sign, second)));
+            }
+        }
     }
 
-    let root = ops.get("root").context("failed to find root")?;
-    let part1 = root.value_of(&ops);
+    while let Some(entry @ (name, (first, sign, second))) = to_optimise.pop_front() {
+        match ops_optimised.get(first).zip(ops_optimised.get(second)) {
+            None => {
+                to_optimise.push_back(entry);
+            }
+            Some((first, second)) => {
+                let first = Rc::clone(first);
+                let second = Rc::clone(second);
+                ops_optimised.insert(
+                    name,
+                    Rc::new(Op::Compound {
+                        first,
+                        sign,
+                        second,
+                    }),
+                );
+            }
+        }
+    }
 
-    let (l, r) = match root {
+    let root = ops_optimised.get("root").context("failed to find root")?;
+    let part1 = root.value_of();
+
+    let (l, r) = match root.as_ref() {
         Op::Literal(_) => unreachable!(),
-        Op::Compound { first, second, .. } => (first, second)
+        Op::Compound { first, second, .. } => (first, second),
     };
 
-    let left = ops.get(l).context("failed to find left")?.value_of(&ops);
-    let right = ops.get(r).context("failed to find right")?.value_of(&ops);
+    let left = l.value_of();
+    let right = r.value_of();
     let base_diff = left - right;
 
     let mut base = 0;
 
+    let Op::Literal(humn) =  ops_optimised.get("humn").context("expected to find humn")?.as_ref() else {
+        unreachable!();
+    };
+
     'outer: loop {
         let mut curr = 1;
         loop {
-            let humn = ops.get_mut("humn").context("expected to find humn")?;
-            match humn {
-                Op::Literal(l) => {
-                    *l = base + curr;
-                }
-                Op::Compound { .. } => unreachable!(),
-            }
+            humn.set(base + curr);
 
-            let root = ops.get("root").context("failed to find root")?;
-            let (l, r) = match root {
-                Op::Literal(_) => unreachable!(),
-                Op::Compound { first, second, .. } => (first, second)
-            };
-
-            let left = ops.get(l).context("failed to find left")?.value_of(&ops);
-            let right = ops.get(r).context("failed to find right")?.value_of(&ops);
+            let left = l.value_of();
+            let right = r.value_of();
             let diff = (left - right) * base_diff.signum();
             if diff == 0 {
                 break 'outer;
@@ -67,50 +94,41 @@ pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
         base += curr >> 1;
     }
 
-    let humn = ops.get("humn").context("expected to find humn")?;
-    let part2 = match humn {
-        Op::Literal(v) => *v,
-        Op::Compound { .. } => unreachable!(),
-    };
+    let part2 = humn.get();
 
     (part1, part2).into_result()
 }
 
-fn parse_line(line: &[u8]) -> IResult<&[u8], (&str, Op)> {
+fn parse_line(line: &[u8]) -> IResult<&[u8], (&str, OpUnoptimised)> {
     map(
         tuple((
-            map(
-                take_while_m_n(4, 4, nom::character::is_alphabetic),
-                |b| unsafe { std::str::from_utf8_unchecked(b) },
-            ),
+            map_res(take_while_m_n(4, 4, is_alphabetic), |b| {
+                std::str::from_utf8(b)
+            }),
             tag(b": "),
             alt((
-                map(nom::character::complete::i64, Op::Literal),
-                map(
+                map(nom::character::complete::i64, OpUnoptimised::Literal),
+                map_res(
                     tuple((
-                        take_while_m_n(4, 4, nom::character::is_alphabetic),
+                        take_while_m_n(4, 4, is_alphabetic),
                         tag(" "),
-                        map(
-                            alt((tag(b"+"), tag(b"-"), tag(b"*"), tag(b"/"))),
-                            |s: &[u8]| match s {
-                                b"+" => Sign::Add,
-                                b"-" => Sign::Sub,
-                                b"*" => Sign::Mul,
-                                b"/" => Sign::Div,
-                                _ => unreachable!(),
-                            },
-                        ),
+                        alt((
+                            map(tag("+"), |_| Sign::Add),
+                            map(tag("-"), |_| Sign::Sub),
+                            map(tag("*"), |_| Sign::Mul),
+                            map(tag("/"), |_| Sign::Div),
+                        )),
                         tag(b" "),
-                        take_while_m_n(4, 4, nom::character::is_alphabetic),
+                        take_while_m_n(4, 4, is_alphabetic),
                     )),
                     |(first, _, sign, _, second)| {
-                        let first = unsafe { std::str::from_utf8_unchecked(first) };
-                        let second = unsafe { std::str::from_utf8_unchecked(second) };
-                        Op::Compound {
-                            first,
-                            sign,
-                            second,
-                        }
+                        std::str::from_utf8(first).and_then(|first| {
+                            std::str::from_utf8(second).map(|second| OpUnoptimised::Compound {
+                                first,
+                                sign,
+                                second,
+                            })
+                        })
                     },
                 ),
             )),
@@ -121,7 +139,7 @@ fn parse_line(line: &[u8]) -> IResult<&[u8], (&str, Op)> {
 }
 
 #[derive(Debug)]
-enum Op<'a> {
+enum OpUnoptimised<'a> {
     Literal(i64),
     Compound {
         first: &'a str,
@@ -130,17 +148,27 @@ enum Op<'a> {
     },
 }
 
-impl Op<'_> {
-    fn value_of(&self, source: &HashMap<&str, Op>) -> i64 {
+#[derive(Debug)]
+enum Op {
+    Literal(Cell<i64>),
+    Compound {
+        first: Rc<Op>,
+        sign: Sign,
+        second: Rc<Op>,
+    },
+}
+
+impl Op {
+    fn value_of(&self) -> i64 {
         match self {
-            Op::Literal(v) => *v,
+            Op::Literal(v) => v.get(),
             Op::Compound {
                 first,
                 sign,
                 second,
             } => {
-                let first = source.get(first).unwrap().value_of(source);
-                let second = source.get(second).unwrap().value_of(source);
+                let first = first.value_of();
+                let second = second.value_of();
 
                 sign.apply(first, second)
             }
@@ -148,7 +176,7 @@ impl Op<'_> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 enum Sign {
     Add,
     Sub,
@@ -190,8 +218,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(194058098264286_i64.into()),
-                part2: Some(3592056845086_i64.into()),
+                part1: Some(194_058_098_264_286_i64.into()),
+                part2: Some(3_592_056_845_086_i64.into()),
             }
         );
     }

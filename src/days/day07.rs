@@ -118,8 +118,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(95437.into()),
-                part2: Some(24933642.into()),
+                part1: Some(95_437.into()),
+                part2: Some(24_933_642.into()),
             }
         );
     }
@@ -130,8 +130,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(1297159.into()),
-                part2: Some(3866390.into()),
+                part1: Some(1_297_159.into()),
+                part2: Some(3_866_390.into()),
             }
         );
     }

@@ -11,7 +11,7 @@ pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let (_, numbers) = parse_numbers(input)?;
 
     let part1 = solve(numbers.iter().copied(), 1);
-    let part2 = solve(numbers.iter().map(|n| n * 811589153), 10);
+    let part2 = solve(numbers.iter().map(|n| n * 811_589_153), 10);
 
     (part1, part2).into_result()
 }
@@ -75,9 +75,9 @@ fn solve(nums: impl IntoIterator<Item = i64>, mixes: usize) -> i64 {
 
     let zero_ind = indices[zero_ind];
 
-    numbers[(zero_ind + 1000) % numbers.len()].val
-        + numbers[(zero_ind + 2000) % numbers.len()].val
-        + numbers[(zero_ind + 3000) % numbers.len()].val
+    numbers[(zero_ind + 1_000) % numbers.len()].val
+        + numbers[(zero_ind + 2_000) % numbers.len()].val
+        + numbers[(zero_ind + 3_000) % numbers.len()].val
 }
 
 fn parse_numbers(input: &str) -> IResult<&str, Vec<i64>> {
@@ -102,7 +102,7 @@ mod tests {
             result.unwrap(),
             DayResult {
                 part1: Some(3.into()),
-                part2: Some(1623178306.into()),
+                part2: Some(1_623_178_306.into()),
             }
         );
     }
@@ -113,8 +113,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: Some(8764.into()),
-                part2: Some(535648840980_i64.into()),
+                part1: Some(8_764.into()),
+                part2: Some(535_648_840_980_i64.into()),
             }
         );
     }
