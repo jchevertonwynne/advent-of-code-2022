@@ -64,7 +64,6 @@ pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
 
     let left = l.value_of();
     let right = r.value_of();
-    let base_diff = left - right;
 
     let mut base = 0;
 
@@ -72,14 +71,20 @@ pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
         unreachable!();
     };
 
+    humn.set(humn.get() - 500);
+    let (_const, to_compute, signum) = if l.value_of() != left {
+        (right, l, (right - left).signum())
+    } else {
+        (left, r, (left - right).signum())
+    };
+
     'outer: loop {
         let mut curr = 1;
         loop {
             humn.set(base + curr);
 
-            let left = l.value_of();
-            let right = r.value_of();
-            let diff = (left - right) * base_diff.signum();
+            let new_compute = to_compute.value_of();
+            let diff = (_const - new_compute) * signum;
             if diff == 0 {
                 break 'outer;
             }
