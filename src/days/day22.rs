@@ -155,7 +155,6 @@ fn try_move_p2(
     world: &HashMap<Point, GroundType, impl BuildHasher>,
     side_len: i64,
 ) -> Option<Point> {
-    println!("{position:?}");
     let front_pos = position + *velocity;
     match world.get(&front_pos) {
         Some(Floor) => Some(front_pos),
@@ -574,8 +573,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(6032.into()),
+                part2: Some(5031.into()),
             }
         );
     }
@@ -586,8 +585,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             DayResult {
-                part1: None,
-                part2: None,
+                part1: Some(165094.into()),
+                part2: Some(95316.into()),
             }
         );
     }
