@@ -37,7 +37,7 @@ macro_rules! impl_answer_enum {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match self {
                     $(
-                        Answers::$variant(t) => write!(f, "{}", t),
+                        Answers::$variant(t) => write!(f, "{t}"),
                     )*
                 }
             }

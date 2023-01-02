@@ -6,7 +6,7 @@ use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::combinator::map;
 use nom::IResult;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::hash::BuildHasher;
 use std::ops::{Add, Mul, Neg};
@@ -169,8 +169,13 @@ fn try_move_p2(
                 _ => unreachable!(),
             };
 
-            let mut visited = HashSet::with_capacity_and_hasher(6, FxBuildHasher::default());
-            visited.insert(position);
+            let pos = Point {
+                x: position.x / side_len,
+                y: position.y / side_len,
+            };
+
+            let mut visited: [[bool; 6]; 6] = Default::default();
+            visited[pos.x as usize][pos.y as usize] = true;
             if let Some((p, turns)) = cube_search(
                 position,
                 position,
@@ -224,7 +229,7 @@ fn cube_search(
     goal: u8,
     side_len: i64,
     world: &HashMap<Point, GroundType, impl BuildHasher>,
-    visited: &mut HashSet<Point, impl BuildHasher>,
+    visited: &mut [[bool; 6]; 6],
 ) -> Option<(Point, i64)> {
     // i64 = turns to right
     if state.front == goal {
@@ -384,7 +389,12 @@ fn cube_search(
     }
 
     let up = point + Point { x: 0, y: -side_len };
-    if world.contains_key(&up) && visited.insert(up) {
+    let pos = Point {
+        x: up.x / side_len,
+        y: up.y / side_len,
+    };
+    if world.contains_key(&up) && !visited[pos.x as usize][pos.y as usize] {
+        visited[pos.x as usize][pos.y as usize] = true;
         let new_state = CubeState {
             top: state.back,
             back: state.bottom,
@@ -407,7 +417,12 @@ fn cube_search(
     }
 
     let down = point + Point { x: 0, y: side_len };
-    if world.contains_key(&down) && visited.insert(down) {
+    let pos = Point {
+        x: down.x / side_len,
+        y: down.y / side_len,
+    };
+    if world.contains_key(&down) && !visited[pos.x as usize][pos.y as usize] {
+        visited[pos.x as usize][pos.y as usize] = true;
         let new_state = CubeState {
             top: state.front,
             back: state.top,
@@ -430,7 +445,12 @@ fn cube_search(
     }
 
     let left = point + Point { x: -side_len, y: 0 };
-    if world.contains_key(&left) && visited.insert(left) {
+    let pos = Point {
+        x: left.x / side_len,
+        y: left.y / side_len,
+    };
+    if world.contains_key(&left) && !visited[pos.x as usize][pos.y as usize] {
+        visited[pos.x as usize][pos.y as usize] = true;
         let new_state = CubeState {
             left: state.back,
             back: state.right,
@@ -453,7 +473,12 @@ fn cube_search(
     }
 
     let right = point + Point { x: side_len, y: 0 };
-    if world.contains_key(&right) && visited.insert(right) {
+    let pos = Point {
+        x: right.x / side_len,
+        y: right.y / side_len,
+    };
+    if world.contains_key(&right) && !visited[pos.x as usize][pos.y as usize] {
+        visited[pos.x as usize][pos.y as usize] = true;
         let new_state = CubeState {
             left: state.front,
             back: state.left,

@@ -55,14 +55,8 @@ pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
         std::mem::swap(&mut elves, &mut new_elves);
     }
 
-    let f = |f2: Box<dyn Fn(&Point) -> i64>| match elves.iter().map(f2).minmax() {
-        MinMaxResult::NoElements => unreachable!(),
-        MinMaxResult::OneElement(_) => unreachable!(),
-        MinMaxResult::MinMax(a, b) => (a, b),
-    };
-
-    let (min_x, max_x) = f(Box::new(|e: &Point| e.x));
-    let (min_y, max_y) = f(Box::new(|e: &Point| e.y));
+    let (min_x, max_x) = get_min_max(elves.iter(), |e: &Point| e.x);
+    let (min_y, max_y) = get_min_max(elves.iter(), |e: &Point| e.y);
 
     let part1 = ((max_y - min_y + 1) * (max_x - min_x + 1)) - elves.len() as i64;
 
@@ -100,6 +94,17 @@ pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     }
 
     (part1, part2).into_result()
+}
+
+fn get_min_max<'a, I>(elves: I, mapper: impl Fn(&Point) -> i64) -> (i64, i64)
+where
+    I: Iterator<Item = &'a Point>,
+{
+    match elves.map(mapper).minmax() {
+        MinMaxResult::NoElements => unreachable!(),
+        MinMaxResult::OneElement(_) => unreachable!(),
+        MinMaxResult::MinMax(a, b) => (a, b),
+    }
 }
 
 fn choose_wanted_move(

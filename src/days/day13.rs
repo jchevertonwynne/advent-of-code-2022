@@ -1,81 +1,51 @@
 use crate::{DayResult, IntoDayResult};
+use nom::branch::alt;
+use nom::bytes::complete::tag;
+use nom::combinator::map;
+use nom::multi::separated_list0;
+use nom::sequence::{delimited, tuple};
+use nom::IResult;
 use std::cmp::Ordering;
 use std::fmt::{Debug, Formatter};
-use std::iter::Peekable;
 
-pub fn run(input: &'static str, _: bool) -> anyhow::Result<DayResult> {
+pub fn run(mut input: &'static str, _: bool) -> anyhow::Result<DayResult> {
     let div_1 = Packet(vec![Item::Packet(Packet(vec![Item::Value(2)]))]);
     let div_2 = Packet(vec![Item::Packet(Packet(vec![Item::Value(6)]))]);
 
-    let (part1, d1, d2) = (1..)
-        .zip(input.split("\n\n").map(|lines| {
-            let (a, b) = lines.split_once('\n').unwrap();
-            (
-                parse_packet(&mut a.as_bytes().iter().copied().peekable()),
-                parse_packet(&mut b.as_bytes().iter().copied().peekable()),
-            )
-        }))
-        .fold((0, 1, 2), |(mut part1, mut d1, mut d2), (i, (x, y))| {
-            if x < y {
-                part1 += i;
-            }
-            if x < div_1 {
-                d1 += 1;
-            }
-            if y < div_1 {
-                d1 += 1;
-            }
-            if x < div_2 {
-                d2 += 1;
-            }
-            if y < div_2 {
-                d2 += 1;
-            }
-            (part1, d1, d2)
-        });
+    let mut pair = 1;
+
+    let mut part1 = 0;
+    let mut d1 = 1;
+    let mut d2 = 2;
+    loop {
+        let (_input, (x, y)) = parse_packets(input)?;
+
+        if x < y {
+            part1 += pair;
+        }
+        pair += 1;
+
+        if x < div_1 {
+            d1 += 1;
+        }
+        if y < div_1 {
+            d1 += 1;
+        }
+
+        if x < div_2 {
+            d2 += 1;
+        }
+        if y < div_2 {
+            d2 += 1;
+        }
+
+        if _input.is_empty() {
+            break;
+        }
+        input = &_input[1..];
+    }
 
     (part1, d1 * d2).into_result()
-}
-
-fn parse_packet<I: Iterator<Item = u8>>(input: &mut Peekable<I>) -> Packet {
-    let mut items = Vec::new();
-
-    while let Some(val) = input.next() {
-        match val {
-            b',' | b'[' => {
-                if let Some(item) = parse_item(input) {
-                    items.push(item);
-                }
-            }
-            b']' => return Packet(items),
-            _ => {
-                unreachable!()
-            }
-        }
-    }
-
-    Packet(items)
-}
-
-fn parse_item<I: Iterator<Item = u8>>(input: &mut Peekable<I>) -> Option<Item> {
-    let first = *input.peek().unwrap();
-
-    if (b'0'..=b'9').contains(&first) {
-        input.next();
-        let mut b = first - b'0';
-        if b == 1 {
-            let next = *input.peek().unwrap();
-            if next == b'0' {
-                b = 10;
-                input.next();
-            }
-        }
-        Some(Item::Value(b as usize))
-    } else if first == b']' {
-        None
-    } else {
-        Some(Item::Packet(parse_packet(input)))
-    }
 }
 
 #[derive(Eq, PartialEq, Clone)]
@@ -101,19 +71,39 @@ impl Ord for Packet {
 
 fn slice_cmp(a: &[Item], b: &[Item]) -> Ordering {
     for (a, b) in a.iter().zip(b.iter()) {
-        match a.cmp(b) {
-            Ordering::Less => return Ordering::Less,
-            Ordering::Equal => {}
-            Ordering::Greater => return Ordering::Greater,
-        }
+        return match Ord::cmp(a, b) {
+            Ordering::Equal => continue,
+            lt_or_gt => lt_or_gt,
+        };
     }
 
-    a.len().cmp(&b.len())
+    Ord::cmp(&a.len(), &b.len())
+}
+
+fn parse_packets(input: &str) -> IResult<&str, (Packet, Packet)> {
+    map(
+        tuple((parse_packet, tag("\n"), parse_packet, tag("\n"))),
+        |(a, _, b, _)| (a, b),
+    )(input)
+}
+
+fn parse_packet(input: &str) -> IResult<&str, Packet> {
+    map(
+        delimited(tag("["), separated_list0(tag(","), parse_item), tag("]")),
+        Packet,
+    )(input)
+}
+
+fn parse_item(input: &str) -> IResult<&str, Item> {
+    alt((
+        map(nom::character::complete::u64, Item::Value),
+        map(parse_packet, Item::Packet),
+    ))(input)
 }
 
 #[derive(Eq, PartialEq, Clone)]
 enum Item {
-    Value(usize),
+    Value(u64),
     Packet(Packet),
 }
 
@@ -147,6 +137,7 @@ impl Debug for Item {
 mod tests {
     use super::run;
     use crate::DayResult;
+    use std::assert_eq;
 
     #[test]
     fn test_example_answers() {
