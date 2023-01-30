@@ -113,9 +113,11 @@ fn parse_line(line: &[u8]) -> IResult<&[u8], (&str, OpUnoptimised)> {
             tag(b": "),
             alt((
                 map(nom::character::complete::i64, OpUnoptimised::Literal),
-                map_res(
+                map(
                     tuple((
-                        take_while_m_n(4, 4, is_alphabetic),
+                        map_res(take_while_m_n(4, 4, is_alphabetic), |b| {
+                            std::str::from_utf8(b)
+                        }),
                         tag(" "),
                         alt((
                             map(tag("+"), |_| Sign::Add),
@@ -124,16 +126,14 @@ fn parse_line(line: &[u8]) -> IResult<&[u8], (&str, OpUnoptimised)> {
                             map(tag("/"), |_| Sign::Div),
                         )),
                         tag(b" "),
-                        take_while_m_n(4, 4, is_alphabetic),
+                        map_res(take_while_m_n(4, 4, is_alphabetic), |b| {
+                            std::str::from_utf8(b)
+                        }),
                     )),
-                    |(first, _, sign, _, second)| {
-                        std::str::from_utf8(first).and_then(|first| {
-                            std::str::from_utf8(second).map(|second| OpUnoptimised::Compound {
-                                first,
-                                sign,
-                                second,
-                            })
-                        })
+                    |(first, _, sign, _, second)| OpUnoptimised::Compound {
+                        first,
+                        sign,
+                        second,
                     },
                 ),
             )),

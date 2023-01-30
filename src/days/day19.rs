@@ -31,7 +31,10 @@ pub fn run(mut input: &'static str, _: bool) -> anyhow::Result<DayResult> {
 
 impl State {
     fn part2() -> State {
-        State { turns_remaining: 32, ..Default::default() }
+        State {
+            turns_remaining: 32,
+            ..Default::default()
+        }
     }
 
     fn best_score_from_state(self, blueprint: Blueprint) -> u32 {
@@ -51,7 +54,7 @@ impl State {
         );
         if self.robots.ore_robots < max_ore {
             let turns = blueprint.time_to_make_ore_robot(self);
-            if turns  < self.turns_remaining {
+            if turns < self.turns_remaining {
                 let mut new_state = self - Turns(turns);
                 new_state.robots.ore_robots += 1;
                 new_state.materials -= blueprint.ore_robot;
@@ -61,7 +64,7 @@ impl State {
 
         if self.robots.clay_robots < blueprint.obsidian_robot.clay {
             let turns = blueprint.time_to_make_clay_robot(self);
-            if turns  < self.turns_remaining {
+            if turns < self.turns_remaining {
                 let mut new_state = self - Turns(turns);
                 new_state.robots.clay_robots += 1;
                 new_state.materials -= blueprint.clay_robot;
@@ -73,7 +76,7 @@ impl State {
             && self.robots.obsidian_robots < blueprint.geode_robot.obsidian
         {
             let turns = blueprint.time_to_make_obsidian_robot(self);
-            if turns  < self.turns_remaining {
+            if turns < self.turns_remaining {
                 let mut new_state = self - Turns(turns);
                 new_state.robots.obsidian_robots += 1;
                 new_state.materials -= blueprint.obsidian_robot;
@@ -83,7 +86,7 @@ impl State {
 
         if self.robots.obsidian_robots != 0 {
             let turns = blueprint.time_to_make_geode_robot(self);
-            if turns  < self.turns_remaining {
+            if turns < self.turns_remaining {
                 let mut new_state = self - Turns(turns);
                 new_state.robots.geode_robots += 1;
                 new_state.materials -= blueprint.geode_robot;
